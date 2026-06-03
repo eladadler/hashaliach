@@ -253,12 +253,28 @@ html.no-photos .ph > .ph-img { display: none !important; }
 .app-switch .dot { width: 6px; height: 6px; border-radius: 99px; background: var(--gold-bright); }
 
 /* ===== Full-screen responsive overrides ===== */
-#root { position: fixed; inset: 0; overflow: hidden; }
-.cu-root { position: fixed; inset: 0; }
+/* transform: translateZ(0) creates a new containing block so fixed children
+   (bottom sheets, modals) stay inside the phone column on desktop */
+#root { position: fixed; inset: 0; overflow: hidden; transform: translateZ(0); }
+.cu-root { position: fixed; inset: 0; transform: translateZ(0); }
 .app-switch {
   bottom: max(18px, calc(env(safe-area-inset-bottom, 0px) + 8px)) !important;
   left: max(18px, env(safe-area-inset-left, 18px)) !important;
 }
+/* ===== Desktop: constrain to phone width ===== */
+@media (min-width: 500px) {
+  html, body { background: #0B0907; }
+  #root, .cu-root {
+    left: calc(50% - 215px) !important;
+    right: auto !important;
+    width: 430px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 40px 120px rgba(0,0,0,.9);
+  }
+  .app-switch {
+    left: calc(50% - 215px + 18px) !important;
+  }
+}
+
 
   </style>
   <script>
