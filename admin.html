@@ -2294,6 +2294,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp />);
         el.textContent = '⚠ JavaScript Error\n\n' + errors.join('\n\n---\n\n');
       }
       window.addEventListener('error', function(e) {
+        // Skip opaque cross-origin errors (Script error. from CDN scripts)
+        if (e.message === 'Script error.' && !e.filename && e.lineno === 0) return;
+        // Skip errors with no useful info
+        if (!e.message || e.message === 'Script error.') return;
         errors.push((e.message || '') + '\n' + (e.filename || '') + ':' + e.lineno + '\n' + (e.error && e.error.stack ? e.error.stack : ''));
         show();
       });
