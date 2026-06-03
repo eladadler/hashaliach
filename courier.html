@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>השליח · WaVi — אפליקציית שליח</title>
+  <style>
+/* ===== WaVi · השליח — design tokens ===== */
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* gold */
+  --gold:        #C9A24B;
+  --gold-bright: #DCBB63;
+  --gold-deep:   #A9842F;
+  --gold-soft:   #F6EFDC;
+  --gold-tint:   #FBF7EC;
+
+  /* ink / charcoal */
+  --ink:    #17140D;
+  --ink-2:  #2C2820;
+  --ink-3:  #6B665A;
+  --ink-4:  #9C968A;
+
+  /* paper */
+  --paper:   #FFFFFF;
+  --paper-2: #FAF8F3;
+  --paper-3: #F3F0E8;
+  --line:    #ECE7DC;
+  --line-2:  #E2DCCD;
+
+  /* status colors (food delivery semantics) */
+  --ok:     #2E7D58;
+  --ok-bg:  #E5F1EA;
+  --warn:   #C08A2E;
+  --warn-bg:#F7EDD7;
+  --info:   #2B5B8A;
+  --info-bg:#E4ECF4;
+  --bad:    #B5462F;
+  --bad-bg: #F6E6E1;
+
+  --shadow-sm: 0 1px 2px rgba(23,20,13,.05), 0 2px 6px rgba(23,20,13,.04);
+  --shadow-md: 0 4px 10px rgba(23,20,13,.06), 0 10px 28px rgba(23,20,13,.07);
+  --shadow-lg: 0 8px 20px rgba(23,20,13,.10), 0 24px 48px rgba(23,20,13,.12);
+  --shadow-gold: 0 6px 18px rgba(169,132,47,.30);
+
+  /* map palette (theme-aware) */
+  --map-land:    #E7E1D2;
+  --map-block:   #F1ECE0;
+  --map-street:  #FBF8F1;
+  --map-street2: #F4EFE4;
+  --map-park:    #DDE6CF;
+
+  --r: 20px;
+}
+
+/* ===== Dark theme (courier driving mode) ===== */
+.theme-dark {
+  --ink:    #F5F1E8;
+  --ink-2:  #E4DECF;
+  --ink-3:  #A8A095;
+  --ink-4:  #7C7669;
+
+  --paper:   #232019;
+  --paper-2: #1A1712;
+  --paper-3: #2C281F;
+  --line:    #332E25;
+  --line-2:  #403A2E;
+
+  --gold-soft: #3A3017;
+  --gold-tint: #2A2415;
+
+  --ok-bg:   #16291F;
+  --warn-bg: #2E2614;
+  --info-bg: #16222E;
+  --bad-bg:  #2E1A14;
+
+  --map-land:    #15120D;
+  --map-block:   #1E1A13;
+  --map-street:  #2A251C;
+  --map-street2: #221E16;
+  --map-park:    #1A2114;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px rgba(0,0,0,.24);
+  --shadow-md: 0 4px 10px rgba(0,0,0,.34), 0 10px 28px rgba(0,0,0,.40);
+  --shadow-lg: 0 8px 20px rgba(0,0,0,.45), 0 24px 48px rgba(0,0,0,.55);
+}
+
+* { box-sizing: border-box; }
+
+/* Entrance animations start from hidden states; when the document is backgrounded
+   the browser pauses them at frame 0 (invisible). Disable animations while hidden
+   or when the user prefers reduced motion so the natural (visible) state shows. */
+html.no-anim *, html.no-anim *::before, html.no-anim *::after { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+html, body {
+  margin: 0;
+  background: #e9e6df;
+  font-family: 'Heebo', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--ink);
+}
+
+/* the app screen */
+.screen {
+  position: absolute;
+  inset: 0;
+  direction: rtl;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.screen-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.screen-scroll::-webkit-scrollbar { display: none; }
+
+/* typographic helpers */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* buttons */
+.btn {
+  border: none; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 700; transition: transform .12s ease, box-shadow .2s ease, background .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(.97); }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--ink);
+  box-shadow: var(--shadow-gold);
+}
+.btn-ink {
+  background: var(--ink);
+  color: #fff;
+}
+.btn-ghost {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+}
+
+/* placeholder image: subtle diagonal stripes + monospace label */
+.ph {
+  position: relative;
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(169,132,47,.07) 0 10px,
+      rgba(169,132,47,.025) 10px 20px),
+    var(--gold-tint);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.ph::after {
+  content: attr(data-label);
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 10px; letter-spacing: .04em;
+  color: var(--gold-deep); opacity: .65;
+  text-align: center; padding: 0 10px; line-height: 1.4;
+}
+.ph-dark {
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(255,255,255,.05) 0 10px,
+      rgba(255,255,255,.015) 10px 20px),
+    #211d15;
+}
+.ph-dark::after { color: rgba(220,187,99,.7); }
+
+/* real photo inside a placeholder; visible by default (no JS load-race),
+   hidden by the no-photos toggle, removed entirely on error → striped fallback */
+.ph > .ph-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover;
+}
+html.no-photos .ph > .ph-img { display: none !important; }
+
+/* chips */
+.chip {
+  flex: 0 0 auto; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 15px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+  background: var(--paper); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  transition: all .18s ease;
+}
+.chip-active {
+  background: var(--ink); color: #fff;
+  box-shadow: none;
+}
+
+/* hide-scrollbar utility */
+.hsb { scrollbar-width: none; }
+.hsb::-webkit-scrollbar { display: none; }
+
+/* Entrance animations are transform-only (never start from opacity:0 or off-screen)
+   so that if the browser pauses them at frame 0 — e.g. a throttled/backgrounded
+   iframe during screenshot capture — the content is still fully visible. */
+@keyframes fadeUp {
+  from { transform: translateY(10px); }
+  to   { transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { transform: scale(.96); }
+  to   { transform: scale(1); }
+}
+@keyframes pulseRing {
+  0%   { transform: scale(.7); opacity: .55; }
+  70%  { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes sheetUp {
+  from { transform: translateY(30px); }
+  to   { transform: translateY(0); }
+}
+@keyframes pushFwd {
+  from { transform: translateX(-20px); }
+  to   { transform: translateX(0); }
+}
+@keyframes pushBack {
+  from { transform: translateX(20px); }
+  to   { transform: translateX(0); }
+}
+@keyframes cuSpin { to { transform: rotate(360deg); } }
+.cu-spin { animation: cuSpin .8s linear infinite; }
+
+/* floating app-switcher pill (links back to the launcher) */
+.app-switch {
+  position: fixed; bottom: 18px; left: 18px; z-index: 99999;
+  display: inline-flex; align-items: center; gap: 9px;
+  text-decoration: none; font-family: 'Heebo', sans-serif; direction: rtl;
+  background: rgba(23,20,13,.82); color: #F5F1E8;
+  border: 1px solid rgba(220,187,99,.35); border-radius: 999px;
+  padding: 9px 15px 9px 13px; font-size: 13.5px; font-weight: 800;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 26px rgba(0,0,0,.32);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.app-switch:hover { transform: translateY(-2px); border-color: rgba(220,187,99,.7); background: rgba(23,20,13,.94); }
+.app-switch svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.app-switch .dot { width: 6px; height: 6px; border-radius: 99px; background: var(--gold-bright); }
+
+/* ===== Full-screen responsive overrides ===== */
+#root { position: fixed; inset: 0; overflow: hidden; }
+.cu-root { position: fixed; inset: 0; }
+.app-switch {
+  bottom: max(18px, calc(env(safe-area-inset-bottom, 0px) + 8px)) !important;
+  left: max(18px, env(safe-area-inset-left, 18px)) !important;
+}
+
+  </style>
+  <script>
+    (function () {
+      function sync() { document.documentElement.classList.toggle('no-anim', document.hidden); }
+      document.addEventListener('visibilitychange', sync);
+      sync();
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <a class="app-switch" href="index.html" title="האפליקציות">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#DCBB63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span class="dot"></span>
+    <span>האפליקציות</span>
+  </a>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <script type="text/babel">
+// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
+
+/* BEGIN USAGE */
+// iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
+// Based on the iOS 26 UI Kit + Figma status bar spec. No assets, no deps.
+// Exports (to window): IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
+//
+// Usage — wrap your screen content in <IOSDevice> to get the bezel, status bar
+// and home indicator (props: title, dark, keyboard):
+//
+//   <IOSDevice title="Settings">
+//     ...your screen content...
+//   </IOSDevice>
+//   <IOSDevice dark title="Search" keyboard>…</IOSDevice>
+/* END USAGE */
+
+// ─────────────────────────────────────────────────────────────
+// Status bar
+// ─────────────────────────────────────────────────────────────
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box',
+      position: 'relative', zIndex: 20, width: '100%',
+    }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{
+          fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590,
+          fontSize: 17, lineHeight: '22px', color: c,
+        }}>{time}</span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Liquid glass pill — blur + tint + shine
+// ─────────────────────────────────────────────────────────────
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height: 44, minWidth: 44, borderRadius: 9999,
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      {/* blur + tint */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.28)' : 'rgba(255,255,255,0.5)',
+      }} />
+      {/* shine */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15), inset -1px -1px 1px rgba(255,255,255,0.08)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Navigation bar — glass pills + large title
+// ─────────────────────────────────────────────────────────────
+function IOSNavBar({ title = 'Title', dark = false, trailingIcon = true }) {
+  const muted = dark ? 'rgba(255,255,255,0.6)' : '#404040';
+  const text = dark ? '#fff' : '#000';
+  const pillIcon = (content) => (
+    <IOSGlassPill dark={dark}>
+      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {content}
+      </div>
+    </IOSGlassPill>
+  );
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 10,
+      paddingTop: 62, paddingBottom: 10, position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px',
+      }}>
+        {/* back chevron */}
+        {pillIcon(
+          <svg width="12" height="20" viewBox="0 0 12 20" fill="none" style={{ marginLeft: -1 }}>
+            <path d="M10 2L2 10l8 8" stroke={muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        {/* trailing ellipsis */}
+        {trailingIcon && pillIcon(
+          <svg width="22" height="6" viewBox="0 0 22 6">
+            <circle cx="3" cy="3" r="2.5" fill={muted}/>
+            <circle cx="11" cy="3" r="2.5" fill={muted}/>
+            <circle cx="19" cy="3" r="2.5" fill={muted}/>
+          </svg>
+        )}
+      </div>
+      {/* large title */}
+      <div style={{
+        padding: '0 16px',
+        fontFamily: '-apple-system, system-ui',
+        fontSize: 34, fontWeight: 700, lineHeight: '41px',
+        color: text, letterSpacing: 0.4,
+      }}>{title}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grouped list (inset card, r:26) + row (52px)
+// ─────────────────────────────────────────────────────────────
+function IOSListRow({ title, detail, icon, chevron = true, isLast = false, dark = false }) {
+  const text = dark ? '#fff' : '#000';
+  const sec = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const ter = dark ? 'rgba(235,235,245,0.3)' : 'rgba(60,60,67,0.3)';
+  const sep = dark ? 'rgba(84,84,88,0.65)' : 'rgba(60,60,67,0.12)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', minHeight: 52,
+      padding: '0 16px', position: 'relative',
+      fontFamily: '-apple-system, system-ui', fontSize: 17,
+      letterSpacing: -0.43,
+    }}>
+      {icon && (
+        <div style={{
+          width: 30, height: 30, borderRadius: 7, background: icon,
+          marginRight: 12, flexShrink: 0,
+        }} />
+      )}
+      <div style={{ flex: 1, color: text }}>{title}</div>
+      {detail && <span style={{ color: sec, marginRight: 6 }}>{detail}</span>}
+      {chevron && (
+        <svg width="8" height="14" viewBox="0 0 8 14" style={{ flexShrink: 0 }}>
+          <path d="M1 1l6 6-6 6" stroke={ter} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {!isLast && (
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          left: icon ? 58 : 16, height: 0.5, background: sep,
+        }} />
+      )}
+    </div>
+  );
+}
+
+function IOSList({ header, children, dark = false }) {
+  const hc = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const bg = dark ? '#1C1C1E' : '#fff';
+  return (
+    <div>
+      {header && (
+        <div style={{
+          fontFamily: '-apple-system, system-ui', fontSize: 13,
+          color: hc, textTransform: 'uppercase',
+          padding: '8px 36px 6px', letterSpacing: -0.08,
+        }}>{header}</div>
+      )}
+      <div style={{
+        background: bg, borderRadius: 26,
+        margin: '0 16px', overflow: 'hidden',
+      }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device frame
+// ─────────────────────────────────────────────────────────────
+function IOSDevice({
+  children, width = 402, height = 874, dark = false,
+  title, keyboard = false,
+}) {
+  return (
+    <div style={{
+      width, height, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    }}>
+      {/* dynamic island */}
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }} />
+      {/* status bar (absolute) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      {/* nav + content */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
+        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+        {keyboard && <IOSKeyboard dark={dark} />}
+      </div>
+      {/* home indicator — always on top */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        paddingBottom: 8, pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 139, height: 5, borderRadius: 100,
+          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard — iOS 26 liquid glass
+// ─────────────────────────────────────────────────────────────
+function IOSKeyboard({ dark = false }) {
+  const glyph = dark ? 'rgba(255,255,255,0.7)' : '#595959';
+  const sugg = dark ? 'rgba(255,255,255,0.6)' : '#333';
+  const keyBg = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.85)';
+
+  // special-key icons
+  const icons = {
+    shift: <svg width="19" height="17" viewBox="0 0 19 17"><path d="M9.5 1L1 9.5h4.5V16h8V9.5H18L9.5 1z" fill={glyph}/></svg>,
+    del: <svg width="23" height="17" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke={glyph} strokeWidth="1.6" strokeLinejoin="round"/><path d="M10 5l7 7M17 5l-7 7" stroke={glyph} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+    ret: <svg width="20" height="14" viewBox="0 0 20 14"><path d="M18 1v6H4m0 0l4-4M4 7l4 4" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  };
+
+  const key = (content, { w, flex, ret, fs = 25, k } = {}) => (
+    <div key={k} style={{
+      height: 42, borderRadius: 8.5,
+      flex: flex ? 1 : undefined, width: w, minWidth: 0,
+      background: ret ? '#08f' : keyBg,
+      boxShadow: '0 1px 0 rgba(0,0,0,0.075)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: '-apple-system, "SF Compact", system-ui',
+      fontSize: fs, fontWeight: 458, color: ret ? '#fff' : glyph,
+    }}>{content}</div>
+  );
+
+  const row = (keys, pad = 0) => (
+    <div style={{ display: 'flex', gap: 6.5, justifyContent: 'center', padding: `0 ${pad}px` }}>
+      {keys.map(l => key(l, { flex: true, k: l }))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: 'relative', zIndex: 15, borderRadius: 27, overflow: 'hidden',
+      padding: '11px 0 2px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      boxShadow: dark
+        ? '0 -2px 20px rgba(0,0,0,0.09)'
+        : '0 -1px 6px rgba(0,0,0,0.018), 0 -3px 20px rgba(0,0,0,0.012)',
+    }}>
+      {/* liquid glass bg — same recipe as nav pills */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.14)' : 'rgba(255,255,255,0.25)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* autocorrect bar */}
+      <div style={{
+        display: 'flex', gap: 20, alignItems: 'center',
+        padding: '8px 22px 13px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {['"The"', 'the', 'to'].map((w, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <div style={{ width: 1, height: 25, background: '#ccc', opacity: 0.3 }} />}
+            <div style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: '-apple-system, system-ui', fontSize: 17,
+              color: sugg, letterSpacing: -0.43, lineHeight: '22px',
+            }}>{w}</div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* key layout */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 13,
+        padding: '0 6.5px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {row(['q','w','e','r','t','y','u','i','o','p'])}
+        {row(['a','s','d','f','g','h','j','k','l'], 20)}
+        <div style={{ display: 'flex', gap: 14.25, alignItems: 'center' }}>
+          {key(icons.shift, { w: 45, k: 'shift' })}
+          <div style={{ display: 'flex', gap: 6.5, flex: 1 }}>
+            {['z','x','c','v','b','n','m'].map(l => key(l, { flex: true, k: l }))}
+          </div>
+          {key(icons.del, { w: 45, k: 'del' })}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {key('ABC', { w: 92.25, fs: 18, k: 'abc' })}
+          {key('', { flex: true, k: 'space' })}
+          {key(icons.ret, { w: 92.25, ret: true, k: 'ret' })}
+        </div>
+      </div>
+
+      {/* bottom spacer (emoji+mic area, icons omitted) */}
+      <div style={{ height: 56, width: '100%', position: 'relative' }} />
+    </div>
+  );
+}
+
+Object.assign(window, {
+  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
+});
+
+  </script>
+  <script type="text/babel">
+// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
+
+/* BEGIN USAGE */
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+// Exports (to window): useTweaks, TweaksPanel, TweakSection, TweakRow, TweakSlider,
+//   TweakToggle, TweakRadio, TweakSelect, TweakText, TweakNumber, TweakColor, TweakButton.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// TweakRadio is the segmented control for 2–3 short options (auto-falls-back to
+// TweakSelect past ~16/~10 chars per label); reach for TweakSelect directly when
+// options are many or long. For color tweaks always curate 3-4 options rather than
+// a free picker; an option can also be a whole 2–5 color palette (the stored value
+// is the array). The Tweak* controls are a floor, not a ceiling — build custom
+// controls inside the panel if a tweak calls for UI they don't cover.
+/* END USAGE */
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+  </script>
+  <script type="text/babel">
+// data.jsx — WaVi / השליח demo content (Jerusalem, Hebrew)
+// All restaurants/dishes are fictional. Photos: Unsplash (free license), by category.
+
+const _IMG = {
+  shawarma:  'https://images.unsplash.com/photo-1529006557810-274b9b2fc783',
+  pizza:     'https://images.unsplash.com/photo-1513104890138-7c749659a591',
+  burger:    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
+  sushi:     'https://images.unsplash.com/photo-1579871494447-9811cf80d66c',
+  coffee:    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+  hummus:    'https://plus.unsplash.com/premium_photo-1700084621410-941e5aa5d1e4',
+  salad:     'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
+  fries:     'https://images.unsplash.com/photo-1573080496219-bb080dd4f877',
+  croissant: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a',
+  cheesecake:'https://images.unsplash.com/photo-1533134242443-d4fd215305ad',
+  breakfast: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666',
+};
+const _Q = '?fm=jpg&q=62&w=900&auto=format&fit=crop';
+const pic = (k) => (_IMG[k] ? _IMG[k] + _Q : null);
+
+const CATEGORIES = [
+  { id: 'all',     label: 'הכל',        icon: 'sparkle' },
+  { id: 'pizza',   label: 'פיצה',       icon: 'pizza' },
+  { id: 'burger',  label: 'המבורגר',    icon: 'burger' },
+  { id: 'hummus',  label: 'חומוס',      icon: 'bowl' },
+  { id: 'sushi',   label: 'סושי',        icon: 'fish' },
+  { id: 'shawarma',label: 'שווארמה',    icon: 'wrap' },
+  { id: 'cafe',    label: 'בתי קפה',    icon: 'coffee' },
+  { id: 'sweets',  label: 'קינוחים',    icon: 'cake' },
+  { id: 'veggie',  label: 'צמחוני',     icon: 'leaf' },
+];
+
+const RESTAURANTS = [
+  {
+    id: 'shawarma-mahane',
+    name: 'שווארמה מחנה יהודה',
+    cuisine: ['שווארמה', 'גריל'],
+    cat: 'shawarma',
+    rating: 4.8, reviews: 1240,
+    time: '20–30', fee: 9, minOrder: 45,
+    dist: '1.2 ק״מ', area: 'מחנה יהודה',
+    promo: 'משלוח חינם מעל ₪80',
+    hero: 'תמונת מסעדה — דוכן שווארמה',
+    photo: pic('shawarma'),
+    logo: 'לוגו',
+    featured: true,
+    menu: [
+      { sec: 'המנות שלנו', items: [
+        { id: 'm1', name: 'שווארמה הודו בלאפה', desc: 'לאפה טרייה, חומוס, סלטים וטחינה גולמית', price: 42, img: 'שווארמה בלאפה', photo: pic('shawarma'), pop: true },
+        { id: 'm2', name: 'צלחת שווארמה', desc: 'מנה כפולה, צ׳יפס וקופסת חומוס', price: 64, img: 'צלחת שווארמה', photo: pic('shawarma') },
+        { id: 'm3', name: 'מגש משפחתי', desc: 'מ-3 סוגי בשר, פיתות, סלטים וטחינה', price: 148, img: 'מגש משפחתי', photo: pic('shawarma') },
+      ]},
+      { sec: 'תוספות', items: [
+        { id: 'm4', name: 'צ׳יפס בקארי', desc: 'מנה נדיבה, תיבול הבית', price: 18, img: 'צ׳יפס', photo: pic('fries') },
+        { id: 'm5', name: 'סלט ירקות חתוך דק', desc: 'עגבנייה, מלפפון, בצל ופטרוזיליה', price: 16, img: 'סלט ירקות', photo: pic('salad') },
+        { id: 'm6', name: 'חומוס לצד', desc: 'קופסה אישית עם שמן זית', price: 14, img: 'חומוס', photo: pic('hummus') },
+      ]},
+      { sec: 'שתייה', items: [
+        { id: 'm7', name: 'לימונענע ביתי', desc: 'כוס 350 מ״ל', price: 12, img: 'לימונענע' },
+        { id: 'm8', name: 'פחית משקה', desc: 'קולה / זירו / ספרייט', price: 9, img: 'משקה' },
+      ]},
+    ],
+  },
+  {
+    id: 'pizza-romema',
+    name: 'פיצה רוממה',
+    cuisine: ['פיצה', 'איטלקי'],
+    cat: 'pizza',
+    rating: 4.6, reviews: 870,
+    time: '25–35', fee: 12, minOrder: 50,
+    dist: '2.1 ק״מ', area: 'רוממה',
+    promo: '1+1 על אישיות',
+    hero: 'תמונת מסעדה — פיצרייה',
+    photo: pic('pizza'),
+    logo: 'לוגו',
+    featured: true,
+    menu: [
+      { sec: 'פיצות', items: [
+        { id: 'p1', name: 'מרגריטה', desc: 'רוטב עגבניות, מוצרלה ובזיליקום טרי', price: 54, img: 'פיצה מרגריטה', photo: pic('pizza'), pop: true },
+        { id: 'p2', name: 'פטריות וזיתים', desc: 'מוצרלה, פטריות שמפיניון וזיתי קלמטה', price: 62, img: 'פיצה פטריות', photo: pic('pizza') },
+        { id: 'p3', name: 'הבית — חצי חצי', desc: 'בחירת שתי תוספות מהתפריט', price: 68, img: 'פיצה חצי חצי', photo: pic('pizza') },
+      ]},
+      { sec: 'לצד', items: [
+        { id: 'p4', name: 'לחם שום', desc: '6 יחידות, חמאת שום ופטרוזיליה', price: 24, img: 'לחם שום' },
+        { id: 'p5', name: 'סלט יווני', desc: 'פטה, עגבניות, מלפפון וזיתים', price: 34, img: 'סלט יווני', photo: pic('salad') },
+      ]},
+    ],
+  },
+  {
+    id: 'hummus-eliyahu',
+    name: 'חומוס אליהו',
+    cuisine: ['חומוס', 'מטבח ירושלמי'],
+    cat: 'hummus',
+    rating: 4.9, reviews: 2030,
+    time: '15–25', fee: 8, minOrder: 35,
+    dist: '0.7 ק״מ', area: 'נחלאות',
+    promo: null,
+    hero: 'תמונת מסעדה — חומוסייה',
+    photo: pic('hummus'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'חומוס', items: [
+        { id: 'h1', name: 'חומוס מלא', desc: 'גרגרים, ביצה, טחינה ושמן זית', price: 38, img: 'חומוס מלא', photo: pic('hummus'), pop: true },
+        { id: 'h2', name: 'חומוס פטריות', desc: 'פטריות מוקפצות ובצל', price: 44, img: 'חומוס פטריות', photo: pic('hummus') },
+        { id: 'h3', name: 'מנת משולש', desc: 'חומוס, פול ומסבחה', price: 46, img: 'מנת משולש', photo: pic('hummus') },
+      ]},
+      { sec: 'תוספות', items: [
+        { id: 'h4', name: 'פיתות חמות', desc: '3 יחידות מהטאבון', price: 8, img: 'פיתות' },
+        { id: 'h5', name: 'חמוצים וזיתים', desc: 'צלחת לשולחן', price: 12, img: 'חמוצים', photo: pic('salad') },
+      ]},
+    ],
+  },
+  {
+    id: 'burger-haatika',
+    name: 'המבורגר העתיקה',
+    cuisine: ['המבורגר', 'אמריקאי'],
+    cat: 'burger',
+    rating: 4.5, reviews: 640,
+    time: '30–40', fee: 14, minOrder: 55,
+    dist: '2.8 ק״מ', area: 'העיר העתיקה',
+    promo: 'מנת צ׳יפס מתנה',
+    hero: 'תמונת מסעדה — המבורגר',
+    photo: pic('burger'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'המבורגרים', items: [
+        { id: 'b1', name: 'קלאסי 220 גר׳', desc: 'בקר טחון, חסה, עגבנייה ורוטב הבית', price: 58, img: 'המבורגר קלאסי', photo: pic('burger'), pop: true },
+        { id: 'b2', name: 'דאבל צ׳יז', desc: 'שתי קציצות, צ׳דר כפול ובצל מטוגן', price: 72, img: 'דאבל בורגר', photo: pic('burger') },
+      ]},
+      { sec: 'לצד', items: [
+        { id: 'b3', name: 'טבעות בצל', desc: '8 יחידות בציפוי פריך', price: 26, img: 'טבעות בצל', photo: pic('fries') },
+      ]},
+    ],
+  },
+  {
+    id: 'sushi-ben-yehuda',
+    name: 'סושי בן יהודה',
+    cuisine: ['סושי', 'אסייתי'],
+    cat: 'sushi',
+    rating: 4.7, reviews: 990,
+    time: '30–45', fee: 15, minOrder: 70,
+    dist: '1.9 ק״מ', area: 'מרכז העיר',
+    promo: null,
+    hero: 'תמונת מסעדה — סושי בר',
+    photo: pic('sushi'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'מגשים', items: [
+        { id: 's1', name: 'מגש 32 יחידות', desc: 'מבחר רולים של השף', price: 128, img: 'מגש סושי', photo: pic('sushi'), pop: true },
+      ]},
+      { sec: 'רולים', items: [
+        { id: 's2', name: 'ספייסי טונה', desc: '8 יחידות', price: 46, img: 'ספייסי טונה', photo: pic('sushi') },
+        { id: 's3', name: 'אבוקדו רול', desc: '8 יחידות, צמחוני', price: 38, img: 'אבוקדו רול', photo: pic('sushi') },
+      ]},
+    ],
+  },
+  {
+    id: 'cafe-nachlaot',
+    name: 'בית הקפה של נחלאות',
+    cuisine: ['בית קפה', 'ארוחת בוקר'],
+    cat: 'cafe',
+    rating: 4.8, reviews: 720,
+    time: '20–30', fee: 10, minOrder: 40,
+    dist: '0.9 ק״מ', area: 'נחלאות',
+    promo: 'קפה + מאפה ב-₪29',
+    hero: 'תמונת מסעדה — בית קפה',
+    photo: pic('coffee'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'ארוחות בוקר', items: [
+        { id: 'c1', name: 'בוקר זוגי', desc: '2 ביצים, סלט, גבינות, לחם הבית ושתייה חמה', price: 96, img: 'ארוחת בוקר', photo: pic('breakfast'), pop: true },
+      ]},
+      { sec: 'מאפים', items: [
+        { id: 'c2', name: 'קרואסון חמאה', desc: 'אפוי במקום', price: 16, img: 'קרואסון', photo: pic('croissant') },
+        { id: 'c3', name: 'עוגת גבינה', desc: 'פרוסה אישית', price: 28, img: 'עוגת גבינה', photo: pic('cheesecake') },
+      ]},
+    ],
+  },
+];
+
+const byId = (id) => RESTAURANTS.find(r => r.id === id);
+
+Object.assign(window, { CATEGORIES, RESTAURANTS, byId, pic });
+
+  </script>
+  <script type="text/babel">
+// ui.jsx — shared components for WaVi / השליח
+
+const { useState, useEffect, useRef } = React;
+
+const ils = (n) => '₪' + n;
+
+/* ---------- Photo: real image with graceful fallback to striped placeholder ---------- */
+function Photo({ src, label, style, radius, className = '', children }) {
+  const r = (radius != null) ? radius : (style && style.borderRadius);
+  return (
+    <div className={'ph ' + className} data-label={label || ''} style={{ ...style, borderRadius: r }}>
+      {src ? (
+        <img className="ph-img" src={src} alt="" loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
+/* ---------- Icon set (clean line icons) ---------- */
+function Icon({ name, size = 22, stroke = 'currentColor', fill = 'none', sw = 2, style }) {
+  const p = { width: size, height: size, viewBox: '0 0 24 24', fill, stroke,
+    strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', style };
+  switch (name) {
+    case 'search':   return <svg {...p}><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>;
+    case 'pin':      return <svg {...p}><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>;
+    case 'star':     return <svg {...p} fill={stroke} stroke="none"><path d="M12 3.2l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.9 6.9 18.9 8 13.2 3.7 9.2l5.8-.7z"/></svg>;
+    case 'clock':    return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>;
+    case 'plus':     return <svg {...p}><path d="M12 5v14M5 12h14"/></svg>;
+    case 'minus':    return <svg {...p}><path d="M5 12h14"/></svg>;
+    case 'back':     return <svg {...p}><path d="M9 5l7 7-7 7"/></svg>; /* RTL: arrow points right = back */
+    case 'chev-left':return <svg {...p}><path d="M15 5l-7 7 7 7"/></svg>;
+    case 'home':     return <svg {...p}><path d="M4 11.5L12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>;
+    case 'orders':   return <svg {...p}><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>;
+    case 'user':     return <svg {...p}><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>;
+    case 'heart':    return <svg {...p}><path d="M12 20s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.3-7 10-7 10z"/></svg>;
+    case 'heart-fill':return <svg {...p} fill={stroke} stroke="none"><path d="M12 20s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.3-7 10-7 10z"/></svg>;
+    case 'phone':    return <svg {...p}><path d="M4 5c0 8 7 15 15 15l2-3-4-2-2 2c-3-1.5-5.5-4-7-7l2-2-2-4z"/></svg>;
+    case 'bag':      return <svg {...p}><path d="M6 8h12l-1 12H7z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>;
+    case 'tag':      return <svg {...p}><path d="M3 12l8-8 9 1 1 9-8 8z"/><circle cx="15.5" cy="8.5" r="1.4" fill={stroke}/></svg>;
+    case 'check':    return <svg {...p}><path d="M5 12.5l5 5 9-11"/></svg>;
+    case 'sliders':  return <svg {...p}><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M18 18h2"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="18" r="2"/></svg>;
+    case 'cart':     return <svg {...p}><path d="M3 4h2l2 12h11l2-8H6"/><circle cx="9" cy="20" r="1.4" fill={stroke}/><circle cx="18" cy="20" r="1.4" fill={stroke}/></svg>;
+    case 'card':     return <svg {...p}><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M3 10h18"/></svg>;
+    case 'cash':     return <svg {...p}><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>;
+    case 'bit':      return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M9 8.5h4a2 2 0 0 1 0 4H9zM9 12.5h4.4a2 2 0 0 1 0 4H9zM9 8.5v8M11 6.7v1.8M11 16.5v1.8"/></svg>;
+    case 'edit':     return <svg {...p}><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13 6l4 4"/></svg>;
+    case 'motorbike':return <svg {...p}><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-7h5l3 7M10 10l-1-3H7M15 10h4"/></svg>;
+    case 'sparkle':  return <svg {...p}><path d="M12 3l1.6 5L19 9.6 13.6 11 12 16l-1.6-5L5 9.6 10.4 8z"/></svg>;
+    case 'time-fill':return <svg {...p} fill={stroke} stroke="none"><circle cx="12" cy="12" r="9"/></svg>;
+    default: return null;
+  }
+}
+
+/* ---------- Star rating chip ---------- */
+function Rating({ value, size = 13, color = 'var(--gold-deep)', bold = true }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color }}>
+      <Icon name="star" size={size} stroke={color} />
+      <span className="num" style={{ fontWeight: bold ? 700 : 600, fontSize: size + 1, color: 'var(--ink)' }}>
+        {value.toFixed(1)}
+      </span>
+    </span>
+  );
+}
+
+/* ---------- Promo / fee badge ---------- */
+function Pill({ children, tone = 'soft', style }) {
+  const tones = {
+    soft: { background: 'var(--gold-soft)', color: 'var(--gold-deep)' },
+    ink:  { background: 'rgba(23,20,13,.78)', color: '#fff' },
+    glass:{ background: 'rgba(255,255,255,.92)', color: 'var(--ink)', backdropFilter: 'blur(4px)' },
+    free: { background: 'var(--ok-bg)', color: 'var(--ok)' },
+  };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '4px 9px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+      ...tones[tone], ...style,
+    }}>{children}</span>
+  );
+}
+
+/* ---------- Restaurant card (3 style variants via `variant`) ---------- */
+function RestaurantCard({ r, onClick, variant = 'overlay', radius = 20 }) {
+  const meta = (compact) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 8 : 10, flexWrap: 'wrap',
+      fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>
+      <Rating value={r.rating} />
+      <span style={{ width: 3, height: 3, borderRadius: 9, background: 'var(--line-2)' }} />
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <Icon name="clock" size={13} stroke="var(--ink-4)" sw={2.2} />{r.time} ד׳
+      </span>
+      <span style={{ width: 3, height: 3, borderRadius: 9, background: 'var(--line-2)' }} />
+      <span>{r.fee === 0 ? 'משלוח חינם' : 'משלוח ' + ils(r.fee)}</span>
+    </div>
+  );
+
+  /* ---- list variant: horizontal row ---- */
+  if (variant === 'list') {
+    return (
+      <button className="rcard" onClick={onClick} style={{
+        all: 'unset', cursor: 'pointer', display: 'flex', gap: 13, alignItems: 'stretch',
+        background: 'var(--paper)', borderRadius: radius, padding: 10,
+        boxShadow: 'var(--shadow-sm)', width: '100%', boxSizing: 'border-box',
+      }}>
+        <Photo src={r.photo} label={r.hero} radius={radius - 6} style={{
+          width: 96, height: 96, flex: '0 0 auto', position: 'relative' }}>
+          {r.promo && <span style={{ position: 'absolute', top: 6, insetInlineStart: 6, zIndex: 2 }}>
+            <Pill tone="ink" style={{ fontSize: 10, padding: '3px 7px' }}><Icon name="tag" size={11} stroke="#fff"/>הטבה</Pill></span>}
+        </Photo>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, minWidth: 0 }}>
+          <div style={{ fontSize: 16.5, fontWeight: 800, lineHeight: 1.1 }}>{r.name}</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 600 }}>{r.cuisine.join(' · ')} · {r.area}</div>
+          {meta(true)}
+        </div>
+      </button>
+    );
+  }
+
+  /* ---- classic variant: image on top, info below ---- */
+  if (variant === 'classic') {
+    return (
+      <button className="rcard" onClick={onClick} style={{
+        all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column',
+        background: 'var(--paper)', borderRadius: radius, overflow: 'hidden',
+        boxShadow: 'var(--shadow-sm)', width: '100%', boxSizing: 'border-box',
+      }}>
+        <Photo src={r.photo} label={r.hero} style={{ width: '100%', aspectRatio: '16/10', position: 'relative' }}>
+          <FavDot />
+          <div style={{ position: 'absolute', bottom: 10, insetInlineStart: 10, display: 'flex', gap: 6, zIndex: 2 }}>
+            {r.promo && <Pill tone="glass"><Icon name="tag" size={12} stroke="var(--gold-deep)"/>{r.promo}</Pill>}
+          </div>
+        </Photo>
+        <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <span style={{ fontSize: 17, fontWeight: 800 }}>{r.name}</span>
+            <Rating value={r.rating} />
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 600 }}>{r.cuisine.join(' · ')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Icon name="clock" size={14} stroke="var(--ink-4)" sw={2.2} />{r.time} ד׳</span>
+            <span style={{ width: 3, height: 3, borderRadius: 9, background: 'var(--line-2)' }} />
+            <span>{r.fee === 0 ? 'משלוח חינם' : 'משלוח ' + ils(r.fee)}</span>
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  /* ---- overlay variant (default): info floats over image ---- */
+  return (
+    <button className="rcard" onClick={onClick} style={{
+      all: 'unset', cursor: 'pointer', display: 'block', position: 'relative',
+      borderRadius: radius, overflow: 'hidden', boxShadow: 'var(--shadow-md)',
+      width: '100%', boxSizing: 'border-box', aspectRatio: '3/2',
+    }}>
+      <Photo src={r.photo} label={r.hero} style={{ position: 'absolute', inset: 0 }} />
+      <div style={{ position: 'absolute', inset: 0, background:
+        'linear-gradient(180deg, rgba(23,20,13,0) 38%, rgba(23,20,13,.16) 60%, rgba(23,20,13,.82) 100%)' }} />
+      <div style={{ position: 'absolute', top: 12, insetInlineStart: 12, insetInlineEnd: 12,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        {r.promo ? <Pill tone="glass"><Icon name="tag" size={12} stroke="var(--gold-deep)"/>{r.promo}</Pill> : <span/>}
+        <FavDot light />
+      </div>
+      <div style={{ position: 'absolute', bottom: 0, insetInlineStart: 0, insetInlineEnd: 0, padding: '14px 15px', color: '#fff' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.1, marginBottom: 5 }}>{r.name}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, opacity: .92 }}>{r.cuisine.join(' · ')}</div>
+          </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,.16)',
+            backdropFilter: 'blur(6px)', padding: '5px 9px', borderRadius: 999, flex: '0 0 auto' }}>
+            <Icon name="star" size={13} stroke="var(--gold-bright)" />
+            <span className="num" style={{ fontWeight: 700, fontSize: 14 }}>{r.rating.toFixed(1)}</span>
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 9, fontSize: 13, fontWeight: 600, opacity: .95 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Icon name="clock" size={14} stroke="#fff" sw={2.2} />{r.time} ד׳</span>
+          <span style={{ width: 3, height: 3, borderRadius: 9, background: 'rgba(255,255,255,.6)' }} />
+          <span>{r.fee === 0 ? 'משלוח חינם' : 'משלוח ' + ils(r.fee)}</span>
+          <span style={{ width: 3, height: 3, borderRadius: 9, background: 'rgba(255,255,255,.6)' }} />
+          <span>{r.dist}</span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function FavDot({ light }) {
+  const [fav, setFav] = useState(false);
+  return (
+    <span onClick={(e) => { e.stopPropagation(); setFav(v => !v); }}
+      style={{ width: 34, height: 34, borderRadius: 999, flex: '0 0 auto',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        background: light ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.92)',
+        backdropFilter: 'blur(6px)', boxShadow: light ? 'none' : 'var(--shadow-sm)' }}>
+      <Icon name={fav ? 'heart-fill' : 'heart'} size={18}
+        stroke={fav ? '#D9534F' : (light ? '#fff' : 'var(--ink-3)')} sw={2.2} />
+    </span>
+  );
+}
+
+Object.assign(window, { Icon, Rating, Pill, RestaurantCard, FavDot, ils, Photo });
+
+  </script>
+  <script type="text/babel">
+// courier-map.jsx — stylized city map for the courier app (theme-aware)
+
+function CourierMap({ mode = 'idle', orders = [], route = null, dim = false, courierAt = null }) {
+  // route: { path, progress } | null. mode: 'idle' | 'search' | 'nav'
+  const defPath = "M 196 470 C 180 410, 150 380, 175 320 S 250 250, 232 200 S 280 160, 312 150";
+  const path = route?.path || defPath;
+  const progress = route?.progress ?? 0.4;
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: 'var(--map-land)' }}>
+      <svg viewBox="0 0 390 760" preserveAspectRatio="xMidYMid slice"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <rect x="0" y="0" width="390" height="760" fill="var(--map-land)" />
+        {[[20,40,120,90],[170,30,150,110],[40,180,110,120],[200,190,150,130],[20,350,130,150],
+          [210,370,150,120],[30,560,150,120],[220,560,140,130],[20,700,150,80],[210,700,150,80]].map((b,i)=>(
+          <rect key={i} x={b[0]} y={b[1]} width={b[2]} height={b[3]} rx="8" fill="var(--map-block)" />
+        ))}
+        <rect x="170" y="320" width="150" height="120" rx="14" fill="var(--map-park)" />
+        <path d="M180 430 q60 -40 130 -10" stroke="var(--map-park)" strokeWidth="6" fill="none" opacity=".6"/>
+        <g stroke="var(--map-street)" strokeWidth="13" strokeLinecap="round">
+          <line x1="-10" y1="160" x2="400" y2="150"/>
+          <line x1="-10" y1="340" x2="400" y2="350"/>
+          <line x1="-10" y1="540" x2="400" y2="535"/>
+          <line x1="160" y1="-10" x2="170" y2="770"/>
+          <line x1="350" y1="-10" x2="360" y2="770"/>
+        </g>
+        <g stroke="var(--map-street2)" strokeWidth="6" strokeLinecap="round">
+          <line x1="60" y1="-10" x2="65" y2="770"/>
+          <line x1="270" y1="-10" x2="275" y2="770"/>
+          <line x1="-10" y1="250" x2="400" y2="245"/>
+          <line x1="-10" y1="450" x2="400" y2="445"/>
+        </g>
+
+        {/* navigation route */}
+        {mode === 'nav' && (
+          <g>
+            <path d={path} fill="none" stroke="var(--paper)" strokeWidth="9" strokeLinecap="round" opacity=".85"/>
+            <path d={path} fill="none" stroke="var(--gold)" strokeWidth="5.5" strokeLinecap="round"
+              strokeDasharray="520" strokeDashoffset={520 - progress * 520} style={{ transition: 'stroke-dashoffset .8s ease' }}/>
+            <path d={path} fill="none" stroke="var(--gold-deep)" strokeWidth="5.5" strokeLinecap="round"
+              strokeDasharray="1 14" opacity=".5"/>
+            {/* destination pin (end of path) */}
+            <g transform={route?.dest ? `translate(${route.dest[0]},${route.dest[1]})` : 'translate(312,150)'}>
+              <path d="M0 -30 C 12 -30 20 -22 20 -10 C 20 4 0 22 0 22 C 0 22 -20 4 -20 -10 C -20 -22 -12 -30 0 -30 Z" fill="var(--ink)"/>
+              <circle cy="-11" r="6.5" fill="var(--paper)"/>
+            </g>
+          </g>
+        )}
+
+        {/* available order pins (search/idle) */}
+        {mode !== 'nav' && orders.map((o, i) => (
+          <g key={i} transform={`translate(${o.x},${o.y})`} style={{ opacity: dim ? .35 : 1 }}>
+            <circle r="22" fill="var(--gold)" opacity=".14">
+              {!dim && <animate attributeName="r" values="14;30" dur="2.2s" begin={`${i*0.4}s`} repeatCount="indefinite"/>}
+              {!dim && <animate attributeName="opacity" values=".22;0" dur="2.2s" begin={`${i*0.4}s`} repeatCount="indefinite"/>}
+            </circle>
+            <circle r="15" fill="var(--paper)" stroke="var(--gold)" strokeWidth="3"/>
+            <text y="5" textAnchor="middle" fill="var(--gold-deep)" fontSize="13" fontWeight="800"
+              fontFamily="Heebo, sans-serif">₪{o.payout}</text>
+          </g>
+        ))}
+
+        {/* courier marker (you) */}
+        <g transform={`translate(${courierAt ? courierAt[0] : 196},${courierAt ? courierAt[1] : 470})`}>
+          <circle r="20" fill="#2B6FE0" opacity=".18">
+            <animate attributeName="r" values="11;24" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values=".4;0" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle r="11" fill="#2B6FE0" stroke="#fff" strokeWidth="3.5"/>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+Object.assign(window, { CourierMap });
+
+  </script>
+  <script type="text/babel">
+// courier-screens.jsx — Home (online/offline), Incoming order, Navigate, Delivered
+
+const { useState: cuState, useEffect: cuEffect, useRef: cuRef } = React;
+
+const DEMO_ORDER = {
+  id: '4821',
+  rest: 'שווארמה מחנה יהודה',
+  restArea: 'מחנה יהודה · רחוב אגריפס 12',
+  restPhoto: pic('shawarma'),
+  cust: 'נועה לוי',
+  custArea: 'רחוב יפו 42, ירושלים · קומה 3',
+  items: 3, itemsText: '3 פריטים · שולם באשראי',
+  base: 18, tip: 6, get payout() { return this.base + this.tip; },
+  distPickup: '1.4', distDrop: '2.3', totalKm: '3.7',
+  estMin: 14,
+};
+
+const AVAIL_PINS = [
+  { x: 110, y: 250, payout: 22 },
+  { x: 300, y: 180, payout: 31 },
+  { x: 250, y: 470, payout: 19 },
+  { x: 95, y: 560, payout: 27 },
+];
+
+/* ===================== HOME ===================== */
+function CourierHome({ online, setOnline, stats, onGoIncoming }) {
+  return (
+    <div className="screen">
+      <CourierMap mode={online ? 'search' : 'idle'} orders={AVAIL_PINS} dim={!online} />
+      <div style={{ position: 'absolute', inset: 0, background: online
+        ? 'linear-gradient(180deg, rgba(0,0,0,.04), transparent 22%, transparent 60%, var(--paper-2) 99%)'
+        : 'linear-gradient(180deg, rgba(0,0,0,.10), transparent 30%, transparent 55%, var(--paper-2) 98%)',
+        pointerEvents: 'none' }} />
+
+      {/* top bar */}
+      <div style={{ position: 'absolute', top: 'max(56px, calc(env(safe-area-inset-top, 0px) + 12px))', insetInlineStart: 16, insetInlineEnd: 16, zIndex: 5,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'var(--paper)',
+          borderRadius: 999, padding: '8px 14px 8px 8px', boxShadow: 'var(--shadow-md)' }}>
+          <div className="ph" data-label="" style={{ width: 34, height: 34, borderRadius: 999,
+            boxShadow: 'inset 0 0 0 2px var(--gold-soft)' }} />
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1 }}>יוסי אברהמי</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold-deep)', marginTop: 2 }}>שליח · ⭐ 4.9</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--paper)',
+          borderRadius: 999, padding: '9px 14px', boxShadow: 'var(--shadow-md)' }}>
+          <span style={{ width: 9, height: 9, borderRadius: 999, background: online ? 'var(--ok)' : 'var(--ink-4)' }} />
+          <span style={{ fontSize: 13.5, fontWeight: 800, color: online ? 'var(--ok)' : 'var(--ink-3)' }}>
+            {online ? 'מחובר' : 'לא מחובר'}</span>
+        </div>
+      </div>
+
+      {/* searching indicator */}
+      {online && (
+        <div style={{ position: 'absolute', top: 120, insetInlineStart: 0, insetInlineEnd: 0, zIndex: 4,
+          display: 'flex', justifyContent: 'center', animation: 'fadeUp .4s ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'rgba(23,20,13,.82)',
+            color: '#fff', borderRadius: 999, padding: '8px 16px', backdropFilter: 'blur(6px)' }}>
+            <span className="cu-spin" style={{ width: 14, height: 14, borderRadius: 999,
+              border: '2.5px solid rgba(255,255,255,.3)', borderTopColor: 'var(--gold-bright)' }} />
+            <span style={{ fontSize: 13.5, fontWeight: 700 }}>מחפש הזמנות באזורך…</span>
+          </div>
+        </div>
+      )}
+
+      {/* bottom panel */}
+      <div style={{ position: 'absolute', bottom: 0, insetInlineStart: 0, insetInlineEnd: 0, zIndex: 5,
+        background: 'var(--paper)', borderRadius: '24px 24px 0 0', boxShadow: '0 -10px 40px rgba(0,0,0,.12)',
+        padding: '12px 18px', paddingBottom: 'max(30px, calc(env(safe-area-inset-bottom, 0px) + 8px))' }>
+        <div style={{ width: 40, height: 5, borderRadius: 99, background: 'var(--line-2)', margin: '0 auto 14px' }} />
+
+        {/* today stats */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+          <StatCard big label="הרווחת היום" value={'₪' + stats.earned} />
+          <StatCard label="משלוחים" value={stats.deliveries} />
+          <StatCard label="שעות" value={stats.hours} />
+        </div>
+
+        <button className={'btn ' + (online ? 'btn-ghost' : 'btn-primary')} onClick={() => {
+          const next = !online; setOnline(next);
+          if (next) onGoIncoming();
+        }} style={{ width: '100%', height: 58, borderRadius: 16, fontSize: 17 }}>
+          {online ? <><Icon name="time-fill" size={16} stroke="var(--bad)" /> סיום משמרת</>
+                  : <><Icon name="motorbike" size={22} stroke="var(--ink)" sw={2} /> יציאה למשמרת</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, big }) {
+  if (big) {
+    return (
+      <div style={{ flex: 1.5, background: 'linear-gradient(160deg, var(--gold-bright), var(--gold))',
+        borderRadius: 15, padding: '12px 14px', boxShadow: 'var(--shadow-gold)' }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(23,20,13,.66)' }}>{label}</div>
+        <div className="num" style={{ fontSize: 27, fontWeight: 900, marginTop: 3, color: '#17140D' }}>{value}</div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ flex: 1, background: 'var(--paper-2)',
+      borderRadius: 15, padding: '12px 14px', boxShadow: 'inset 0 0 0 1px var(--line)' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-4)' }}>{label}</div>
+      <div className="num" style={{ fontSize: 22, fontWeight: 900, marginTop: 3, color: 'var(--ink)' }}>{value}</div>
+    </div>
+  );
+}
+
+/* ===================== INCOMING ORDER ===================== */
+function IncomingOrder({ order, onAccept, onReject }) {
+  const [sec, setSec] = cuState(30);
+  cuEffect(() => {
+    if (sec <= 0) { onReject(); return; }
+    const t = setTimeout(() => setSec(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [sec]);
+  const pct = sec / 30;
+  const C = 2 * Math.PI * 32;
+
+  return (
+    <div className="screen" style={{ background: '#17140D' }}>
+      <div style={{ position: 'absolute', inset: 0, background:
+        'radial-gradient(120% 80% at 50% -10%, rgba(201,162,75,.22), transparent 60%)' }} />
+      <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column',
+        padding: 'max(64px, calc(env(safe-area-inset-top, 0px) + 20px))' + ' 22px ' + 'max(30px, calc(env(safe-area-inset-bottom, 0px) + 8px))', color: '#fff', animation: 'scaleIn .3s ease' }}>
+
+        {/* timer ring */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{ position: 'relative', width: 76, height: 76 }}>
+            <svg width="76" height="76" viewBox="0 0 76 76" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="38" cy="38" r="32" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth="6"/>
+              <circle cx="38" cy="38" r="32" fill="none" stroke="var(--gold-bright)" strokeWidth="6"
+                strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct)}
+                style={{ transition: 'stroke-dashoffset 1s linear' }}/>
+            </svg>
+            <div className="num" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 26, fontWeight: 900 }}>{sec}</div>
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, opacity: .8 }}>הזמנה חדשה!</div>
+        </div>
+
+        {/* payout */}
+        <div style={{ textAlign: 'center', margin: '20px 0 8px' }}>
+          <div className="num" style={{ fontSize: 52, fontWeight: 900, letterSpacing: '-.02em',
+            color: 'var(--gold-bright)', lineHeight: 1 }}>₪{order.payout}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, opacity: .7, marginTop: 6 }}>
+            ₪{order.base} בסיס + ₪{order.tip} טיפ · {order.totalKm} ק״מ סה״כ</div>
+        </div>
+
+        {/* pickup → dropoff */}
+        <div style={{ background: 'rgba(255,255,255,.07)', borderRadius: 18, padding: 16, marginTop: 16,
+          backdropFilter: 'blur(4px)' }}>
+          <Leg icon="bag" tone="var(--gold-bright)" title={order.rest} sub={order.restArea} dist={order.distPickup} />
+          <div style={{ height: 1, background: 'rgba(255,255,255,.1)', margin: '12px 0' }} />
+          <Leg icon="pin" tone="#fff" title="מסירה ללקוח" sub={order.custArea} dist={order.distDrop} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 14,
+          fontSize: 13, fontWeight: 600, opacity: .65 }}>
+          <Icon name="clock" size={15} stroke="#fff" /> זמן משוער למשלוח · {order.estMin} דק׳
+        </div>
+
+        {/* actions */}
+        <div style={{ marginTop: 'auto', display: 'flex', gap: 12, paddingTop: 20 }}>
+          <button className="btn" onClick={onReject} style={{ flex: '0 0 auto', width: 64, height: 60,
+            borderRadius: 16, background: 'rgba(255,255,255,.12)', color: '#fff' }}>
+            <Icon name="plus" size={26} stroke="#fff" sw={2.6} style={{ transform: 'rotate(45deg)' }} />
+          </button>
+          <button className="btn btn-primary" onClick={onAccept} style={{ flex: 1, height: 60, borderRadius: 16, fontSize: 18 }}>
+            <Icon name="check" size={22} stroke="var(--ink)" sw={3} /> קבל הזמנה
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Leg({ icon, tone, title, sub, dist }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <span style={{ width: 38, height: 38, borderRadius: 11, flex: '0 0 auto', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,.1)' }}>
+        <Icon name={icon} size={20} stroke={tone} sw={2} /></span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15.5, fontWeight: 800 }}>{title}</div>
+        <div style={{ fontSize: 12.5, opacity: .65, fontWeight: 500, marginTop: 2 }}>{sub}</div>
+      </div>
+      <div className="num" style={{ fontSize: 13, fontWeight: 700, opacity: .85, flex: '0 0 auto' }}>{dist} ק״מ</div>
+    </div>
+  );
+}
+
+Object.assign(window, { CourierHome, IncomingOrder, DEMO_ORDER, AVAIL_PINS });
+
+  </script>
+  <script type="text/babel">
+// courier-nav.jsx — Navigate screen (pickup → dropoff) + Delivered
+
+const NAV_STAGES = {
+  toPickup:  { label: 'בדרך לאיסוף',  action: 'הגעתי למסעדה',      next: 'atPickup',  who: 'rest' },
+  atPickup:  { label: 'באיסוף',        action: 'אספתי את ההזמנה',   next: 'toDropoff', who: 'rest' },
+  toDropoff: { label: 'בדרך ללקוח',    action: 'הגעתי ליעד',        next: 'atDropoff', who: 'cust' },
+  atDropoff: { label: 'במסירה',        action: 'מסרתי את ההזמנה',   next: 'done',      who: 'cust' },
+};
+
+// route geometry: courier→restaurant, then restaurant→customer
+const ROUTE_PICKUP = { path: "M 196 470 C 180 410, 150 380, 175 320 S 250 250, 232 200 S 280 160, 312 150", dest: [312,150] };
+const ROUTE_DROP   = { path: "M 312 150 C 300 230, 250 250, 232 320 S 150 420, 150 470 S 180 540, 150 590", dest: [150,590] };
+
+function CourierNavigate({ order, stage, setStage, onDone }) {
+  const st = NAV_STAGES[stage];
+  const toPickupPhase = stage === 'toPickup' || stage === 'atPickup';
+  const route = toPickupPhase ? ROUTE_PICKUP : ROUTE_DROP;
+  const arrived = stage === 'atPickup' || stage === 'atDropoff';
+  const isRest = st.who === 'rest';
+
+  const [progress, setProgress] = cuState(0.15);
+  cuEffect(() => {
+    setProgress(arrived ? 1 : 0.55);
+  }, [stage]);
+
+  const courierAt = toPickupPhase
+    ? (arrived ? [312,150] : [232,200])
+    : (arrived ? [150,590] : [232,320]);
+
+  const advance = () => {
+    if (st.next === 'done') onDone();
+    else setStage(st.next);
+  };
+
+  return (
+    <div className="screen">
+      <CourierMap mode="nav" route={{ ...route, progress }} courierAt={courierAt} />
+
+      {/* top nav banner */}
+      <div style={{ position: 'absolute', top: 'max(50px, calc(env(safe-area-inset-top, 0px) + 6px))', insetInlineStart: 14, insetInlineEnd: 14, zIndex: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 13, background: '#17140D', color: '#fff',
+          borderRadius: 18, padding: '14px 16px', boxShadow: 'var(--shadow-lg)' }}>
+          <Icon name={toPickupPhase ? 'back' : 'back'} size={28} stroke="var(--gold-bright)" sw={2.4}
+            style={{ transform: 'scaleX(-1)' }} />
+          <div style={{ flex: 1 }}>
+            <div className="num" style={{ fontSize: 22, fontWeight: 900, lineHeight: 1 }}>
+              {arrived ? 'הגעת ליעד' : (toPickupPhase ? order.distPickup : order.distDrop) + ' ק״מ'}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, opacity: .7, marginTop: 3 }}>
+              {isRest ? order.restArea : order.custArea}</div>
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink)', background: 'var(--gold-bright)',
+            borderRadius: 999, padding: '5px 11px' }}>{st.label}</span>
+        </div>
+      </div>
+
+      {/* progress chips */}
+      <div style={{ position: 'absolute', top: 116, insetInlineStart: 14, insetInlineEnd: 14, zIndex: 6,
+        display: 'flex', gap: 6, marginTop: 6 }}>
+        {['toPickup','atPickup','toDropoff','atDropoff'].map((k, i) => {
+          const order_ = ['toPickup','atPickup','toDropoff','atDropoff'];
+          const cur = order_.indexOf(stage);
+          return <div key={k} style={{ flex: 1, height: 5, borderRadius: 99,
+            background: i <= cur ? 'var(--gold)' : 'rgba(0,0,0,.12)', transition: 'background .4s ease' }} />;
+        })}
+      </div>
+
+      {/* recenter */}
+      <button style={{ all: 'unset', cursor: 'pointer', position: 'absolute', bottom: 290, insetInlineEnd: 16, zIndex: 6,
+        width: 46, height: 46, borderRadius: 14, background: 'var(--paper)', boxShadow: 'var(--shadow-md)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name="motorbike" size={22} stroke="var(--ink-2)" sw={2} />
+      </button>
+
+      {/* bottom action card */}
+      <div style={{ position: 'absolute', bottom: 0, insetInlineStart: 0, insetInlineEnd: 0, zIndex: 7,
+        background: 'var(--paper)', borderRadius: '24px 24px 0 0', boxShadow: '0 -10px 40px rgba(0,0,0,.16)',
+        padding: '12px 18px', paddingBottom: 'max(30px, calc(env(safe-area-inset-bottom, 0px) + 8px))' }>
+        <div style={{ width: 40, height: 5, borderRadius: 99, background: 'var(--line-2)', margin: '0 auto 14px' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+          {isRest
+            ? <Photo src={order.restPhoto} label="" radius={14} style={{ width: 52, height: 52, flex: '0 0 auto' }} />
+            : <div className="ph" data-label="" style={{ width: 52, height: 52, borderRadius: 999, flex: '0 0 auto',
+                boxShadow: 'inset 0 0 0 2px var(--gold-soft)' }} />}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold-deep)' }}>
+              {isRest ? 'איסוף מ' : 'מסירה ל'}</div>
+            <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.15 }}>{isRest ? order.rest : order.cust}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600, marginTop: 2 }}>
+              {isRest ? order.itemsText : order.custArea}</div>
+          </div>
+          <button style={{ all: 'unset', cursor: 'pointer', width: 48, height: 48, borderRadius: 999,
+            background: 'var(--paper-2)', boxShadow: 'inset 0 0 0 1.5px var(--line-2)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+            <Icon name="phone" size={21} stroke="var(--gold-deep)" sw={2} /></button>
+        </div>
+
+        {/* order note */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12, background: 'var(--paper-2)',
+          borderRadius: 13, padding: '11px 13px' }}>
+          <Icon name={isRest ? 'bag' : 'pin'} size={18} stroke="var(--ink-3)" sw={2} />
+          <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-3)' }}>
+            {isRest ? 'הזמנה #' + order.id + ' · שולם מראש' : 'קומה 3, דירה 9 · להשאיר בדלת'}</span>
+        </div>
+
+        {/* swipe-style action */}
+        <button className="btn btn-primary" onClick={advance} style={{ width: '100%', height: 58, borderRadius: 16,
+          fontSize: 17, marginTop: 14 }}>
+          {arrived && <Icon name="check" size={22} stroke="var(--ink)" sw={3} />}
+          {st.action}
+          {!arrived && <Icon name="back" size={20} stroke="var(--ink)" sw={2.6} style={{ transform: 'scaleX(-1)' }} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== DELIVERED ===================== */
+function CourierDelivered({ order, onBack }) {
+  return (
+    <div className="screen" style={{ background: '#17140D' }}>
+      <div style={{ position: 'absolute', inset: 0, background:
+        'radial-gradient(120% 70% at 50% 15%, rgba(46,125,88,.28), transparent 60%)' }} />
+      <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', padding: '40px 24px', color: '#fff', textAlign: 'center' }}>
+        <div style={{ width: 92, height: 92, borderRadius: 999, background: 'var(--ok)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 40px rgba(46,125,88,.5)',
+          animation: 'scaleIn .35s ease' }}>
+          <Icon name="check" size={48} stroke="#fff" sw={3} />
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 900, marginTop: 20 }}>המשלוח הושלם!</div>
+        <div style={{ fontSize: 14.5, fontWeight: 600, opacity: .7, marginTop: 6 }}>הזמנה #{order.id} נמסרה ל{order.cust}</div>
+
+        <div style={{ background: 'rgba(255,255,255,.08)', borderRadius: 20, padding: '20px 22px', marginTop: 28,
+          width: '100%', maxWidth: 300 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, opacity: .6 }}>הרווח שלך מהמשלוח</div>
+          <div className="num" style={{ fontSize: 44, fontWeight: 900, color: 'var(--gold-bright)', margin: '4px 0 14px' }}>
+            ₪{order.payout}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 600, opacity: .8 }}>
+            <span>בסיס</span><span className="num">₪{order.base}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 600, opacity: .8, marginTop: 7 }}>
+            <span>טיפ מהלקוח</span><span className="num" style={{ color: 'var(--gold-bright)' }}>₪{order.tip}</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ position: 'relative', padding: '0 22px 34px' }}>
+        <button className="btn btn-primary" onClick={onBack} style={{ width: '100%', height: 58, borderRadius: 16, fontSize: 17 }}>
+          <Icon name="motorbike" size={22} stroke="var(--ink)" sw={2} /> חזרה למשמרת
+        </button>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { CourierNavigate, CourierDelivered });
+
+  </script>
+  <script type="text/babel">
+// courier-app.jsx — WaVi / השליח — courier (driver) app root
+
+const { useState: caState, useEffect: caEffect, useRef: caRef, useCallback: caCb } = React;
+
+const CT_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "כהה",
+  "gold": "#C9A24B"
+}/*EDITMODE-END*/;
+
+function CourierApp() {
+  const [t, setTweak] = useTweaks(CT_DEFAULTS);
+
+  const [online, setOnline] = caState(false);
+  const [view, setView] = caState('home');   // home | incoming | nav | delivered
+  const [dir, setDir] = caState(1);
+  const [stage, setStage] = caState('toPickup');
+  const [stats, setStats] = caState({ earned: 142, deliveries: 6, hours: '4.5' });
+  const incomingTimer = caRef(null);
+
+  // palette
+  caEffect(() => {
+    const r = document.documentElement.style;
+    r.setProperty('--gold', t.gold);
+    r.setProperty('--gold-bright', `color-mix(in oklab, ${t.gold}, white 24%)`);
+    r.setProperty('--gold-deep',   `color-mix(in oklab, ${t.gold}, black 28%)`);
+  }, [t.gold]);
+
+  const dark = t.theme === 'כהה';
+
+  const go = caCb((next, d = 1) => { setDir(d); setView(next); }, []);
+
+  // when going online, trigger an incoming order after a short search
+  const scheduleIncoming = caCb(() => {
+    clearTimeout(incomingTimer.current);
+    incomingTimer.current = setTimeout(() => go('incoming', 1), 2200);
+  }, [go]);
+
+  caEffect(() => () => clearTimeout(incomingTimer.current), []);
+
+  const acceptOrder = () => { setStage('toPickup'); go('nav', 1); };
+  const rejectOrder = () => { go('home', -1); scheduleIncoming(); };
+  const finishDelivery = () => {
+    setStats(s => ({ ...s, earned: s.earned + DEMO_ORDER.payout, deliveries: s.deliveries + 1 }));
+    go('delivered', 1);
+  };
+  const backToShift = () => { go('home', -1); scheduleIncoming(); };
+
+  let screen;
+  if (view === 'home')      screen = <CourierHome online={online} setOnline={(v) => {
+                                setOnline(v); if (!v) clearTimeout(incomingTimer.current); }}
+                                stats={stats} onGoIncoming={scheduleIncoming} />;
+  else if (view === 'incoming') screen = <IncomingOrder order={DEMO_ORDER} onAccept={acceptOrder} onReject={rejectOrder} />;
+  else if (view === 'nav')      screen = <CourierNavigate order={DEMO_ORDER} stage={stage} setStage={setStage} onDone={finishDelivery} />;
+  else if (view === 'delivered') screen = <CourierDelivered order={DEMO_ORDER} onBack={backToShift} />;
+
+  return (
+    <>
+      <div className={'cu-root' + (dark ? ' theme-dark' : '')} style={{ position: 'fixed', inset: 0 }}>
+        <div key={view} style={{ position: 'absolute', inset: 0,
+          animation: `${dir > 0 ? 'pushFwd' : 'pushBack'} .34s cubic-bezier(.2,.75,.2,1)` }}>
+          {screen}
+        </div>
+      </div>
+
+      <TweaksPanel>
+        <TweakSection label="מראה" />
+        <TweakRadio label="ערכת נושא" value={t.theme} options={['כהה', 'בהיר']}
+          onChange={(v) => setTweak('theme', v)} />
+        <TweakColor label="גוון הזהב" value={t.gold}
+          options={['#C9A24B', '#B8902F', '#D4AF37', '#C08A3E']}
+          onChange={(v) => setTweak('gold', v)} />
+      </TweaksPanel>
+    </>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<CourierApp />);
+
+  </script>
+</body>
+</html>

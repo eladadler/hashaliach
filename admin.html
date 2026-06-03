@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>השליח · WaVi — מוקד התפעול</title>
+  <style>
+/* ===== WaVi · השליח — design tokens ===== */
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* gold */
+  --gold:        #C9A24B;
+  --gold-bright: #DCBB63;
+  --gold-deep:   #A9842F;
+  --gold-soft:   #F6EFDC;
+  --gold-tint:   #FBF7EC;
+
+  /* ink / charcoal */
+  --ink:    #17140D;
+  --ink-2:  #2C2820;
+  --ink-3:  #6B665A;
+  --ink-4:  #9C968A;
+
+  /* paper */
+  --paper:   #FFFFFF;
+  --paper-2: #FAF8F3;
+  --paper-3: #F3F0E8;
+  --line:    #ECE7DC;
+  --line-2:  #E2DCCD;
+
+  /* status colors (food delivery semantics) */
+  --ok:     #2E7D58;
+  --ok-bg:  #E5F1EA;
+  --warn:   #C08A2E;
+  --warn-bg:#F7EDD7;
+  --info:   #2B5B8A;
+  --info-bg:#E4ECF4;
+  --bad:    #B5462F;
+  --bad-bg: #F6E6E1;
+
+  --shadow-sm: 0 1px 2px rgba(23,20,13,.05), 0 2px 6px rgba(23,20,13,.04);
+  --shadow-md: 0 4px 10px rgba(23,20,13,.06), 0 10px 28px rgba(23,20,13,.07);
+  --shadow-lg: 0 8px 20px rgba(23,20,13,.10), 0 24px 48px rgba(23,20,13,.12);
+  --shadow-gold: 0 6px 18px rgba(169,132,47,.30);
+
+  /* map palette (theme-aware) */
+  --map-land:    #E7E1D2;
+  --map-block:   #F1ECE0;
+  --map-street:  #FBF8F1;
+  --map-street2: #F4EFE4;
+  --map-park:    #DDE6CF;
+
+  --r: 20px;
+}
+
+/* ===== Dark theme (courier driving mode) ===== */
+.theme-dark {
+  --ink:    #F5F1E8;
+  --ink-2:  #E4DECF;
+  --ink-3:  #A8A095;
+  --ink-4:  #7C7669;
+
+  --paper:   #232019;
+  --paper-2: #1A1712;
+  --paper-3: #2C281F;
+  --line:    #332E25;
+  --line-2:  #403A2E;
+
+  --gold-soft: #3A3017;
+  --gold-tint: #2A2415;
+
+  --ok-bg:   #16291F;
+  --warn-bg: #2E2614;
+  --info-bg: #16222E;
+  --bad-bg:  #2E1A14;
+
+  --map-land:    #15120D;
+  --map-block:   #1E1A13;
+  --map-street:  #2A251C;
+  --map-street2: #221E16;
+  --map-park:    #1A2114;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px rgba(0,0,0,.24);
+  --shadow-md: 0 4px 10px rgba(0,0,0,.34), 0 10px 28px rgba(0,0,0,.40);
+  --shadow-lg: 0 8px 20px rgba(0,0,0,.45), 0 24px 48px rgba(0,0,0,.55);
+}
+
+* { box-sizing: border-box; }
+
+/* Entrance animations start from hidden states; when the document is backgrounded
+   the browser pauses them at frame 0 (invisible). Disable animations while hidden
+   or when the user prefers reduced motion so the natural (visible) state shows. */
+html.no-anim *, html.no-anim *::before, html.no-anim *::after { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+html, body {
+  margin: 0;
+  background: #e9e6df;
+  font-family: 'Heebo', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--ink);
+}
+
+/* the app screen */
+.screen {
+  position: absolute;
+  inset: 0;
+  direction: rtl;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.screen-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.screen-scroll::-webkit-scrollbar { display: none; }
+
+/* typographic helpers */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* buttons */
+.btn {
+  border: none; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 700; transition: transform .12s ease, box-shadow .2s ease, background .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(.97); }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--ink);
+  box-shadow: var(--shadow-gold);
+}
+.btn-ink {
+  background: var(--ink);
+  color: #fff;
+}
+.btn-ghost {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+}
+
+/* placeholder image: subtle diagonal stripes + monospace label */
+.ph {
+  position: relative;
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(169,132,47,.07) 0 10px,
+      rgba(169,132,47,.025) 10px 20px),
+    var(--gold-tint);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.ph::after {
+  content: attr(data-label);
+  font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+  font-size: 10px; letter-spacing: .04em;
+  color: var(--gold-deep); opacity: .65;
+  text-align: center; padding: 0 10px; line-height: 1.4;
+}
+.ph-dark {
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(255,255,255,.05) 0 10px,
+      rgba(255,255,255,.015) 10px 20px),
+    #211d15;
+}
+.ph-dark::after { color: rgba(220,187,99,.7); }
+
+/* real photo inside a placeholder; visible by default (no JS load-race),
+   hidden by the no-photos toggle, removed entirely on error → striped fallback */
+.ph > .ph-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover;
+}
+html.no-photos .ph > .ph-img { display: none !important; }
+
+/* chips */
+.chip {
+  flex: 0 0 auto; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 15px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+  background: var(--paper); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  transition: all .18s ease;
+}
+.chip-active {
+  background: var(--ink); color: #fff;
+  box-shadow: none;
+}
+
+/* hide-scrollbar utility */
+.hsb { scrollbar-width: none; }
+.hsb::-webkit-scrollbar { display: none; }
+
+/* Entrance animations are transform-only (never start from opacity:0 or off-screen)
+   so that if the browser pauses them at frame 0 — e.g. a throttled/backgrounded
+   iframe during screenshot capture — the content is still fully visible. */
+@keyframes fadeUp {
+  from { transform: translateY(10px); }
+  to   { transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { transform: scale(.96); }
+  to   { transform: scale(1); }
+}
+@keyframes pulseRing {
+  0%   { transform: scale(.7); opacity: .55; }
+  70%  { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes sheetUp {
+  from { transform: translateY(30px); }
+  to   { transform: translateY(0); }
+}
+@keyframes pushFwd {
+  from { transform: translateX(-20px); }
+  to   { transform: translateX(0); }
+}
+@keyframes pushBack {
+  from { transform: translateX(20px); }
+  to   { transform: translateX(0); }
+}
+@keyframes cuSpin { to { transform: rotate(360deg); } }
+.cu-spin { animation: cuSpin .8s linear infinite; }
+
+/* floating app-switcher pill (links back to the launcher) */
+.app-switch {
+  position: fixed; bottom: 18px; left: 18px; z-index: 99999;
+  display: inline-flex; align-items: center; gap: 9px;
+  text-decoration: none; font-family: 'Heebo', sans-serif; direction: rtl;
+  background: rgba(23,20,13,.82); color: #F5F1E8;
+  border: 1px solid rgba(220,187,99,.35); border-radius: 999px;
+  padding: 9px 15px 9px 13px; font-size: 13.5px; font-weight: 800;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 26px rgba(0,0,0,.32);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.app-switch:hover { transform: translateY(-2px); border-color: rgba(220,187,99,.7); background: rgba(23,20,13,.94); }
+.app-switch svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.app-switch .dot { width: 6px; height: 6px; border-radius: 99px; background: var(--gold-bright); }
+
+/* ===== Full-screen responsive overrides ===== */
+#root { position: fixed; inset: 0; overflow: hidden; }
+.cu-root { position: fixed; inset: 0; }
+.app-switch {
+  bottom: max(18px, calc(env(safe-area-inset-bottom, 0px) + 8px)) !important;
+  left: max(18px, env(safe-area-inset-left, 18px)) !important;
+}
+
+  </style>
+  <script>
+    (function () {
+      function sync() { document.documentElement.classList.toggle('no-anim', document.hidden); }
+      document.addEventListener('visibilitychange', sync);
+      sync();
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <a class="app-switch" href="index.html" title="האפליקציות">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#DCBB63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span class="dot"></span>
+    <span>האפליקציות</span>
+  </a>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <script type="text/babel">
+// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
+
+/* BEGIN USAGE */
+// MacOS.jsx — Simplified macOS Tahoe (Liquid Glass) window
+// Based on the macOS Tahoe UI Kit. No image assets, no dependencies.
+// Exports (to window): MacWindow, MacSidebar, MacSidebarItem, MacSidebarHeader, MacToolbar, MacGlass, MacTrafficLights
+//
+// Usage — wrap your app content in <MacWindow> to get the window chrome
+// (traffic lights + titlebar). Props: width, height, title, sidebar (pass a
+// <MacSidebar> element); compose MacToolbar/MacGlass inside as needed:
+//
+//   <MacWindow width={980} height={620} title="Documents"
+//              sidebar={<MacSidebar>…</MacSidebar>}>
+//     ...your app content...
+//   </MacWindow>
+/* END USAGE */
+
+const MAC_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro", "Helvetica Neue", sans-serif';
+
+// ─────────────────────────────────────────────────────────────
+// Liquid glass primitive — blur + white tint + inset highlight
+// ─────────────────────────────────────────────────────────────
+function MacGlass({ children, radius = 296, dark = false, style = {} }) {
+  return (
+    <div style={{ position: 'relative', borderRadius: radius, ...style }}>
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: radius,
+        background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.35)',
+        backdropFilter: 'blur(40px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.12)' : '0.5px solid rgba(255,255,255,0.6)',
+        boxShadow: dark
+          ? '0 8px 40px rgba(0,0,0,0.2)'
+          : '0 8px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.4)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Traffic lights (14px, Tahoe colors)
+// ─────────────────────────────────────────────────────────────
+function MacTrafficLights({ style = {} }) {
+  const dot = (bg) => (
+    <div style={{
+      width: 14, height: 14, borderRadius: '50%', background: bg,
+      border: '0.5px solid rgba(0,0,0,0.1)',
+    }} />
+  );
+  return (
+    <div style={{ display: 'flex', gap: 9, alignItems: 'center', padding: 1, ...style }}>
+      {dot('#ff736a')}{dot('#febc2e')}{dot('#19c332')}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Toolbar — title + single glass pill icon
+// ─────────────────────────────────────────────────────────────
+function MacToolbar({ title = 'Folder' }) {
+  return (
+    <div style={{
+      display: 'flex', gap: 8, alignItems: 'center', padding: 8, flexShrink: 0,
+    }}>
+      {/* title */}
+      <div style={{
+        fontFamily: MAC_FONT, fontSize: 15, fontWeight: 700,
+        color: 'rgba(0,0,0,0.85)', whiteSpace: 'nowrap', paddingLeft: 8,
+      }}>{title}</div>
+      <div style={{ flex: 1 }} />
+      {/* single action */}
+      <MacGlass>
+        <div style={{
+          width: 36, height: 36, display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#4c4c4c', opacity: 0.4 }} />
+        </div>
+      </MacGlass>
+      {/* search */}
+      <MacGlass>
+        <div style={{
+          width: 140, height: 36, display: 'flex', alignItems: 'center',
+          gap: 6, padding: '0 12px',
+        }}>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <circle cx="5.5" cy="5.5" r="4" stroke="#727272" strokeWidth="1.5"/>
+            <path d="M8.5 8.5l3 3" stroke="#727272" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <span style={{
+            fontFamily: MAC_FONT, fontSize: 13, fontWeight: 500, color: '#727272',
+          }}>Search</span>
+        </div>
+      </MacGlass>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Sidebar — frosted glass panel floating inside the window
+// ─────────────────────────────────────────────────────────────
+function MacSidebarItem({ label, selected = false }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      height: 24, padding: '4px 10px 4px 6px', margin: '0 10px',
+      borderRadius: 8, position: 'relative',
+      fontFamily: MAC_FONT, fontSize: 11, fontWeight: 500,
+    }}>
+      {selected && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 8,
+          background: 'rgba(0,0,0,0.11)', mixBlendMode: 'multiply',
+        }} />
+      )}
+      <div style={{
+        width: 14, height: 14, borderRadius: '50%',
+        background: selected ? '#007aff' : 'rgba(0,0,0,0.4)',
+        opacity: selected ? 1 : 0.5, flexShrink: 0, position: 'relative',
+      }} />
+      <span style={{ color: 'rgba(0,0,0,0.85)', position: 'relative' }}>{label}</span>
+    </div>
+  );
+}
+
+function MacSidebar({ children }) {
+  return (
+    <div style={{
+      width: 220, height: '100%', padding: 8, flexShrink: 0,
+      position: 'relative', display: 'flex', flexDirection: 'column',
+    }}>
+      {/* glass panel */}
+      <div style={{
+        position: 'absolute', inset: 8, borderRadius: 18,
+        background: 'rgba(210,225,245,0.45)',
+        backdropFilter: 'blur(50px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(50px) saturate(200%)',
+        border: '0.5px solid rgba(255,255,255,0.5)',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.35)',
+      }} />
+      {/* content */}
+      <div style={{
+        position: 'relative', zIndex: 1, padding: '10px 0',
+        display: 'flex', flexDirection: 'column', gap: 2,
+      }}>
+        {/* window controls + sidebar toggle */}
+        <div style={{
+          height: 32, display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', padding: '0 10px', marginBottom: 4,
+        }}>
+          <MacTrafficLights />
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function MacSidebarHeader({ title }) {
+  return (
+    <div style={{
+      padding: '14px 18px 5px',
+      fontFamily: MAC_FONT, fontSize: 11, fontWeight: 700,
+      color: 'rgba(0,0,0,0.5)',
+    }}>{title}</div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Window — r:26, big shadow, sidebar + toolbar + content
+// ─────────────────────────────────────────────────────────────
+function MacWindow({
+  width = 900, height = 600, title = 'Folder',
+  sidebar, children,
+}) {
+  return (
+    <div style={{
+      width, height, borderRadius: 26, overflow: 'hidden',
+      background: '#fff',
+      boxShadow: '0 0 0 1px rgba(0,0,0,0.23), 0 16px 48px rgba(0,0,0,0.35)',
+      display: 'flex', position: 'relative',
+      fontFamily: MAC_FONT,
+    }}>
+      <MacSidebar>{sidebar}</MacSidebar>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <MacToolbar title={title} />
+        <div style={{ flex: 1, overflow: 'auto', padding: '4px 8px' }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  MacWindow, MacSidebar, MacSidebarItem, MacSidebarHeader,
+  MacToolbar, MacGlass, MacTrafficLights,
+});
+
+  </script>
+  <script type="text/babel">
+// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
+
+/* BEGIN USAGE */
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+// Exports (to window): useTweaks, TweaksPanel, TweakSection, TweakRow, TweakSlider,
+//   TweakToggle, TweakRadio, TweakSelect, TweakText, TweakNumber, TweakColor, TweakButton.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// TweakRadio is the segmented control for 2–3 short options (auto-falls-back to
+// TweakSelect past ~16/~10 chars per label); reach for TweakSelect directly when
+// options are many or long. For color tweaks always curate 3-4 options rather than
+// a free picker; an option can also be a whole 2–5 color palette (the stored value
+// is the array). The Tweak* controls are a floor, not a ceiling — build custom
+// controls inside the panel if a tweak calls for UI they don't cover.
+/* END USAGE */
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+  </script>
+  <script type="text/babel">
+// data.jsx — WaVi / השליח demo content (Jerusalem, Hebrew)
+// All restaurants/dishes are fictional. Photos: Unsplash (free license), by category.
+
+const _IMG = {
+  shawarma:  'https://images.unsplash.com/photo-1529006557810-274b9b2fc783',
+  pizza:     'https://images.unsplash.com/photo-1513104890138-7c749659a591',
+  burger:    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
+  sushi:     'https://images.unsplash.com/photo-1579871494447-9811cf80d66c',
+  coffee:    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+  hummus:    'https://plus.unsplash.com/premium_photo-1700084621410-941e5aa5d1e4',
+  salad:     'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
+  fries:     'https://images.unsplash.com/photo-1573080496219-bb080dd4f877',
+  croissant: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a',
+  cheesecake:'https://images.unsplash.com/photo-1533134242443-d4fd215305ad',
+  breakfast: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666',
+};
+const _Q = '?fm=jpg&q=62&w=900&auto=format&fit=crop';
+const pic = (k) => (_IMG[k] ? _IMG[k] + _Q : null);
+
+const CATEGORIES = [
+  { id: 'all',     label: 'הכל',        icon: 'sparkle' },
+  { id: 'pizza',   label: 'פיצה',       icon: 'pizza' },
+  { id: 'burger',  label: 'המבורגר',    icon: 'burger' },
+  { id: 'hummus',  label: 'חומוס',      icon: 'bowl' },
+  { id: 'sushi',   label: 'סושי',        icon: 'fish' },
+  { id: 'shawarma',label: 'שווארמה',    icon: 'wrap' },
+  { id: 'cafe',    label: 'בתי קפה',    icon: 'coffee' },
+  { id: 'sweets',  label: 'קינוחים',    icon: 'cake' },
+  { id: 'veggie',  label: 'צמחוני',     icon: 'leaf' },
+];
+
+const RESTAURANTS = [
+  {
+    id: 'shawarma-mahane',
+    name: 'שווארמה מחנה יהודה',
+    cuisine: ['שווארמה', 'גריל'],
+    cat: 'shawarma',
+    rating: 4.8, reviews: 1240,
+    time: '20–30', fee: 9, minOrder: 45,
+    dist: '1.2 ק״מ', area: 'מחנה יהודה',
+    promo: 'משלוח חינם מעל ₪80',
+    hero: 'תמונת מסעדה — דוכן שווארמה',
+    photo: pic('shawarma'),
+    logo: 'לוגו',
+    featured: true,
+    menu: [
+      { sec: 'המנות שלנו', items: [
+        { id: 'm1', name: 'שווארמה הודו בלאפה', desc: 'לאפה טרייה, חומוס, סלטים וטחינה גולמית', price: 42, img: 'שווארמה בלאפה', photo: pic('shawarma'), pop: true },
+        { id: 'm2', name: 'צלחת שווארמה', desc: 'מנה כפולה, צ׳יפס וקופסת חומוס', price: 64, img: 'צלחת שווארמה', photo: pic('shawarma') },
+        { id: 'm3', name: 'מגש משפחתי', desc: 'מ-3 סוגי בשר, פיתות, סלטים וטחינה', price: 148, img: 'מגש משפחתי', photo: pic('shawarma') },
+      ]},
+      { sec: 'תוספות', items: [
+        { id: 'm4', name: 'צ׳יפס בקארי', desc: 'מנה נדיבה, תיבול הבית', price: 18, img: 'צ׳יפס', photo: pic('fries') },
+        { id: 'm5', name: 'סלט ירקות חתוך דק', desc: 'עגבנייה, מלפפון, בצל ופטרוזיליה', price: 16, img: 'סלט ירקות', photo: pic('salad') },
+        { id: 'm6', name: 'חומוס לצד', desc: 'קופסה אישית עם שמן זית', price: 14, img: 'חומוס', photo: pic('hummus') },
+      ]},
+      { sec: 'שתייה', items: [
+        { id: 'm7', name: 'לימונענע ביתי', desc: 'כוס 350 מ״ל', price: 12, img: 'לימונענע' },
+        { id: 'm8', name: 'פחית משקה', desc: 'קולה / זירו / ספרייט', price: 9, img: 'משקה' },
+      ]},
+    ],
+  },
+  {
+    id: 'pizza-romema',
+    name: 'פיצה רוממה',
+    cuisine: ['פיצה', 'איטלקי'],
+    cat: 'pizza',
+    rating: 4.6, reviews: 870,
+    time: '25–35', fee: 12, minOrder: 50,
+    dist: '2.1 ק״מ', area: 'רוממה',
+    promo: '1+1 על אישיות',
+    hero: 'תמונת מסעדה — פיצרייה',
+    photo: pic('pizza'),
+    logo: 'לוגו',
+    featured: true,
+    menu: [
+      { sec: 'פיצות', items: [
+        { id: 'p1', name: 'מרגריטה', desc: 'רוטב עגבניות, מוצרלה ובזיליקום טרי', price: 54, img: 'פיצה מרגריטה', photo: pic('pizza'), pop: true },
+        { id: 'p2', name: 'פטריות וזיתים', desc: 'מוצרלה, פטריות שמפיניון וזיתי קלמטה', price: 62, img: 'פיצה פטריות', photo: pic('pizza') },
+        { id: 'p3', name: 'הבית — חצי חצי', desc: 'בחירת שתי תוספות מהתפריט', price: 68, img: 'פיצה חצי חצי', photo: pic('pizza') },
+      ]},
+      { sec: 'לצד', items: [
+        { id: 'p4', name: 'לחם שום', desc: '6 יחידות, חמאת שום ופטרוזיליה', price: 24, img: 'לחם שום' },
+        { id: 'p5', name: 'סלט יווני', desc: 'פטה, עגבניות, מלפפון וזיתים', price: 34, img: 'סלט יווני', photo: pic('salad') },
+      ]},
+    ],
+  },
+  {
+    id: 'hummus-eliyahu',
+    name: 'חומוס אליהו',
+    cuisine: ['חומוס', 'מטבח ירושלמי'],
+    cat: 'hummus',
+    rating: 4.9, reviews: 2030,
+    time: '15–25', fee: 8, minOrder: 35,
+    dist: '0.7 ק״מ', area: 'נחלאות',
+    promo: null,
+    hero: 'תמונת מסעדה — חומוסייה',
+    photo: pic('hummus'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'חומוס', items: [
+        { id: 'h1', name: 'חומוס מלא', desc: 'גרגרים, ביצה, טחינה ושמן זית', price: 38, img: 'חומוס מלא', photo: pic('hummus'), pop: true },
+        { id: 'h2', name: 'חומוס פטריות', desc: 'פטריות מוקפצות ובצל', price: 44, img: 'חומוס פטריות', photo: pic('hummus') },
+        { id: 'h3', name: 'מנת משולש', desc: 'חומוס, פול ומסבחה', price: 46, img: 'מנת משולש', photo: pic('hummus') },
+      ]},
+      { sec: 'תוספות', items: [
+        { id: 'h4', name: 'פיתות חמות', desc: '3 יחידות מהטאבון', price: 8, img: 'פיתות' },
+        { id: 'h5', name: 'חמוצים וזיתים', desc: 'צלחת לשולחן', price: 12, img: 'חמוצים', photo: pic('salad') },
+      ]},
+    ],
+  },
+  {
+    id: 'burger-haatika',
+    name: 'המבורגר העתיקה',
+    cuisine: ['המבורגר', 'אמריקאי'],
+    cat: 'burger',
+    rating: 4.5, reviews: 640,
+    time: '30–40', fee: 14, minOrder: 55,
+    dist: '2.8 ק״מ', area: 'העיר העתיקה',
+    promo: 'מנת צ׳יפס מתנה',
+    hero: 'תמונת מסעדה — המבורגר',
+    photo: pic('burger'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'המבורגרים', items: [
+        { id: 'b1', name: 'קלאסי 220 גר׳', desc: 'בקר טחון, חסה, עגבנייה ורוטב הבית', price: 58, img: 'המבורגר קלאסי', photo: pic('burger'), pop: true },
+        { id: 'b2', name: 'דאבל צ׳יז', desc: 'שתי קציצות, צ׳דר כפול ובצל מטוגן', price: 72, img: 'דאבל בורגר', photo: pic('burger') },
+      ]},
+      { sec: 'לצד', items: [
+        { id: 'b3', name: 'טבעות בצל', desc: '8 יחידות בציפוי פריך', price: 26, img: 'טבעות בצל', photo: pic('fries') },
+      ]},
+    ],
+  },
+  {
+    id: 'sushi-ben-yehuda',
+    name: 'סושי בן יהודה',
+    cuisine: ['סושי', 'אסייתי'],
+    cat: 'sushi',
+    rating: 4.7, reviews: 990,
+    time: '30–45', fee: 15, minOrder: 70,
+    dist: '1.9 ק״מ', area: 'מרכז העיר',
+    promo: null,
+    hero: 'תמונת מסעדה — סושי בר',
+    photo: pic('sushi'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'מגשים', items: [
+        { id: 's1', name: 'מגש 32 יחידות', desc: 'מבחר רולים של השף', price: 128, img: 'מגש סושי', photo: pic('sushi'), pop: true },
+      ]},
+      { sec: 'רולים', items: [
+        { id: 's2', name: 'ספייסי טונה', desc: '8 יחידות', price: 46, img: 'ספייסי טונה', photo: pic('sushi') },
+        { id: 's3', name: 'אבוקדו רול', desc: '8 יחידות, צמחוני', price: 38, img: 'אבוקדו רול', photo: pic('sushi') },
+      ]},
+    ],
+  },
+  {
+    id: 'cafe-nachlaot',
+    name: 'בית הקפה של נחלאות',
+    cuisine: ['בית קפה', 'ארוחת בוקר'],
+    cat: 'cafe',
+    rating: 4.8, reviews: 720,
+    time: '20–30', fee: 10, minOrder: 40,
+    dist: '0.9 ק״מ', area: 'נחלאות',
+    promo: 'קפה + מאפה ב-₪29',
+    hero: 'תמונת מסעדה — בית קפה',
+    photo: pic('coffee'),
+    logo: 'לוגו',
+    featured: false,
+    menu: [
+      { sec: 'ארוחות בוקר', items: [
+        { id: 'c1', name: 'בוקר זוגי', desc: '2 ביצים, סלט, גבינות, לחם הבית ושתייה חמה', price: 96, img: 'ארוחת בוקר', photo: pic('breakfast'), pop: true },
+      ]},
+      { sec: 'מאפים', items: [
+        { id: 'c2', name: 'קרואסון חמאה', desc: 'אפוי במקום', price: 16, img: 'קרואסון', photo: pic('croissant') },
+        { id: 'c3', name: 'עוגת גבינה', desc: 'פרוסה אישית', price: 28, img: 'עוגת גבינה', photo: pic('cheesecake') },
+      ]},
+    ],
+  },
+];
+
+const byId = (id) => RESTAURANTS.find(r => r.id === id);
+
+Object.assign(window, { CATEGORIES, RESTAURANTS, byId, pic });
+
+  </script>
+  <script type="text/babel">
+// ui.jsx — shared components for WaVi / השליח
+
+const { useState, useEffect, useRef } = React;
+
+const ils = (n) => '₪' + n;
+
+/* ---------- Photo: real image with graceful fallback to striped placeholder ---------- */
+function Photo({ src, label, style, radius, className = '', children }) {
+  const r = (radius != null) ? radius : (style && style.borderRadius);
+  return (
+    <div className={'ph ' + className} data-label={label || ''} style={{ ...style, borderRadius: r }}>
+      {src ? (
+        <img className="ph-img" src={src} alt="" loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
+/* ---------- Icon set (clean line icons) ---------- */
+function Icon({ name, size = 22, stroke = 'currentColor', fill = 'none', sw = 2, style }) {
+  const p = { width: size, height: size, viewBox: '0 0 24 24', fill, stroke,
+    strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', style };
+  switch (name) {
+    case 'search':   return <svg {...p}><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>;
+    case 'pin':      return <svg {...p}><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>;
+    case 'star':     return <svg {...p} fill={stroke} stroke="none"><path d="M12 3.2l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.9 6.9 18.9 8 13.2 3.7 9.2l5.8-.7z"/></svg>;
+    case 'clock':    return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>;
+    case 'plus':     return <svg {...p}><path d="M12 5v14M5 12h14"/></svg>;
+    case 'minus':    return <svg {...p}><path d="M5 12h14"/></svg>;
+    case 'back':     return <svg {...p}><path d="M9 5l7 7-7 7"/></svg>; /* RTL: arrow points right = back */
+    case 'chev-left':return <svg {...p}><path d="M15 5l-7 7 7 7"/></svg>;
+    case 'home':     return <svg {...p}><path d="M4 11.5L12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>;
+    case 'orders':   return <svg {...p}><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>;
+    case 'user':     return <svg {...p}><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>;
+    case 'heart':    return <svg {...p}><path d="M12 20s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.3-7 10-7 10z"/></svg>;
+    case 'heart-fill':return <svg {...p} fill={stroke} stroke="none"><path d="M12 20s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.3-7 10-7 10z"/></svg>;
+    case 'phone':    return <svg {...p}><path d="M4 5c0 8 7 15 15 15l2-3-4-2-2 2c-3-1.5-5.5-4-7-7l2-2-2-4z"/></svg>;
+    case 'bag':      return <svg {...p}><path d="M6 8h12l-1 12H7z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>;
+    case 'tag':      return <svg {...p}><path d="M3 12l8-8 9 1 1 9-8 8z"/><circle cx="15.5" cy="8.5" r="1.4" fill={stroke}/></svg>;
+    case 'check':    return <svg {...p}><path d="M5 12.5l5 5 9-11"/></svg>;
+    case 'sliders':  return <svg {...p}><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M18 18h2"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="18" r="2"/></svg>;
+    case 'cart':     return <svg {...p}><path d="M3 4h2l2 12h11l2-8H6"/><circle cx="9" cy="20" r="1.4" fill={stroke}/><circle cx="18" cy="20" r="1.4" fill={stroke}/></svg>;
+    case 'card':     return <svg {...p}><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M3 10h18"/></svg>;
+    case 'cash':     return <svg {...p}><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>;
+    case 'bit':      return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M9 8.5h4a2 2 0 0 1 0 4H9zM9 12.5h4.4a2 2 0 0 1 0 4H9zM9 8.5v8M11 6.7v1.8M11 16.5v1.8"/></svg>;
+    case 'edit':     return <svg {...p}><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13 6l4 4"/></svg>;
+    case 'motorbike':return <svg {...p}><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-7h5l3 7M10 10l-1-3H7M15 10h4"/></svg>;
+    case 'sparkle':  return <svg {...p}><path d="M12 3l1.6 5L19 9.6 13.6 11 12 16l-1.6-5L5 9.6 10.4 8z"/></svg>;
+    case 'time-fill':return <svg {...p} fill={stroke} stroke="none"><circle cx="12" cy="12" r="9"/></svg>;
+    default: return null;
+  }
+}
+
+/* ---------- Star rating chip ---------- */
+function Rating({ value, size = 13, color = 'var(--gold-deep)', bold = true }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color }}>
+      <Icon name="star" size={size} stroke={color} />
+      <span className="num" style={{ fontWeight: bold ? 700 : 600, fontSize: size + 1, color: 'var(--ink)' }}>
+        {value.toFixed(1)}
+      </span>
+    </span>
+  );
+}
+
+/* ---------- Promo / fee badge ---------- */
+function Pill({ children, tone = 'soft', style }) {
+  const tones = {
+    soft: { background: 'var(--gold-soft)', color: 'var(--gold-deep)' },
+    ink:  { background: 'rgba(23,20,13,.78)', color: '#fff' },
+    glass:{ background: 'rgba(255,255,255,.92)', color: 'var(--ink)', backdropFilter: 'blur(4px)' },
+    free: { background: 'var(--ok-bg)', color: 'var(--ok)' },
+  };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '4px 9px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+      ...tones[tone], ...style,
+    }}>{children}</span>
+  );
+}
+
+/* ---------- Restaurant card (3 style variants via `variant`) ---------- */
+function RestaurantCard({ r, onClick, variant = 'overlay', radius = 20 }) {
+  const meta = (compact) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 8 : 10, flexWrap: 'wrap',
+      fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>
+      <Rating value={r.rating} />
+      <span style={{ width: 3, height: 3, borderRadius: 9, background: 'var(--line-2)' }} />
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <Icon name="clock" size={13} stroke="var(--ink-4)" sw={2.2} />{r.time} ד׳
+      </span>
+      <span style={{ width: 3, height: 3, borderRadius: 9, background: 'var(--line-2)' }} />
+      <span>{r.fee === 0 ? 'משלוח חינם' : 'משלוח ' + ils(r.fee)}</span>
+    </div>
+  );
+
+  /* ---- list variant: horizontal row ---- */
+  if (variant === 'list') {
+    return (
+      <button className="rcard" onClick={onClick} style={{
+        all: 'unset', cursor: 'pointer', display: 'flex', gap: 13, alignItems: 'stretch',
+        background: 'var(--paper)', borderRadius: radius, padding: 10,
+        boxShadow: 'var(--shadow-sm)', width: '100%', boxSizing: 'border-box',
+      }}>
+        <Photo src={r.photo} label={r.hero} radius={radius - 6} style={{
+          width: 96, height: 96, flex: '0 0 auto', position: 'relative' }}>
+          {r.promo && <span style={{ position: 'absolute', top: 6, insetInlineStart: 6, zIndex: 2 }}>
+            <Pill tone="ink" style={{ fontSize: 10, padding: '3px 7px' }}><Icon name="tag" size={11} stroke="#fff"/>הטבה</Pill></span>}
+        </Photo>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, minWidth: 0 }}>
+          <div style={{ fontSize: 16.5, fontWeight: 800, lineHeight: 1.1 }}>{r.name}</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 600 }}>{r.cuisine.join(' · ')} · {r.area}</div>
+          {meta(true)}
+        </div>
+      </button>
+    );
+  }
+
+  /* ---- classic variant: image on top, info below ---- */
+  if (variant === 'classic') {
+    return (
+      <button className="rcard" onClick={onClick} style={{
+        all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column',
+        background: 'var(--paper)', borderRadius: radius, overflow: 'hidden',
+        boxShadow: 'var(--shadow-sm)', width: '100%', boxSizing: 'border-box',
+      }}>
+        <Photo src={r.photo} label={r.hero} style={{ width: '100%', aspectRatio: '16/10', position: 'relative' }}>
+          <FavDot />
+          <div style={{ position: 'absolute', bottom: 10, insetInlineStart: 10, display: 'flex', gap: 6, zIndex: 2 }}>
+            {r.promo && <Pill tone="glass"><Icon name="tag" size={12} stroke="var(--gold-deep)"/>{r.promo}</Pill>}
+          </div>
+        </Photo>
+        <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <span style={{ fontSize: 17, fontWeight: 800 }}>{r.name}</span>
+            <Rating value={r.rating} />
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 600 }}>{r.cuisine.join(' · ')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-3)', fontWeight: 600, marginTop: 2 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Icon name="clock" size={14} stroke="var(--ink-4)" sw={2.2} />{r.time} ד׳</span>
+            <span style={{ width: 3, height: 3, borderRadius: 9, background: 'var(--line-2)' }} />
+            <span>{r.fee === 0 ? 'משלוח חינם' : 'משלוח ' + ils(r.fee)}</span>
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  /* ---- overlay variant (default): info floats over image ---- */
+  return (
+    <button className="rcard" onClick={onClick} style={{
+      all: 'unset', cursor: 'pointer', display: 'block', position: 'relative',
+      borderRadius: radius, overflow: 'hidden', boxShadow: 'var(--shadow-md)',
+      width: '100%', boxSizing: 'border-box', aspectRatio: '3/2',
+    }}>
+      <Photo src={r.photo} label={r.hero} style={{ position: 'absolute', inset: 0 }} />
+      <div style={{ position: 'absolute', inset: 0, background:
+        'linear-gradient(180deg, rgba(23,20,13,0) 38%, rgba(23,20,13,.16) 60%, rgba(23,20,13,.82) 100%)' }} />
+      <div style={{ position: 'absolute', top: 12, insetInlineStart: 12, insetInlineEnd: 12,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        {r.promo ? <Pill tone="glass"><Icon name="tag" size={12} stroke="var(--gold-deep)"/>{r.promo}</Pill> : <span/>}
+        <FavDot light />
+      </div>
+      <div style={{ position: 'absolute', bottom: 0, insetInlineStart: 0, insetInlineEnd: 0, padding: '14px 15px', color: '#fff' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.1, marginBottom: 5 }}>{r.name}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, opacity: .92 }}>{r.cuisine.join(' · ')}</div>
+          </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,.16)',
+            backdropFilter: 'blur(6px)', padding: '5px 9px', borderRadius: 999, flex: '0 0 auto' }}>
+            <Icon name="star" size={13} stroke="var(--gold-bright)" />
+            <span className="num" style={{ fontWeight: 700, fontSize: 14 }}>{r.rating.toFixed(1)}</span>
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 9, fontSize: 13, fontWeight: 600, opacity: .95 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Icon name="clock" size={14} stroke="#fff" sw={2.2} />{r.time} ד׳</span>
+          <span style={{ width: 3, height: 3, borderRadius: 9, background: 'rgba(255,255,255,.6)' }} />
+          <span>{r.fee === 0 ? 'משלוח חינם' : 'משלוח ' + ils(r.fee)}</span>
+          <span style={{ width: 3, height: 3, borderRadius: 9, background: 'rgba(255,255,255,.6)' }} />
+          <span>{r.dist}</span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function FavDot({ light }) {
+  const [fav, setFav] = useState(false);
+  return (
+    <span onClick={(e) => { e.stopPropagation(); setFav(v => !v); }}
+      style={{ width: 34, height: 34, borderRadius: 999, flex: '0 0 auto',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        background: light ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.92)',
+        backdropFilter: 'blur(6px)', boxShadow: light ? 'none' : 'var(--shadow-sm)' }}>
+      <Icon name={fav ? 'heart-fill' : 'heart'} size={18}
+        stroke={fav ? '#D9534F' : (light ? '#fff' : 'var(--ink-3)')} sw={2.2} />
+    </span>
+  );
+}
+
+Object.assign(window, { Icon, Rating, Pill, RestaurantCard, FavDot, ils, Photo });
+
+  </script>
+  <script type="text/babel">
+// admin-data.jsx — WaVi / השליח operations center demo data
+
+const ORDER_STATUS = {
+  unassigned: { he: 'ממתינה לשיוך', tone: 'bad' },
+  assigned:   { he: 'שויך לשליח',   tone: 'gold' },
+  preparing:  { he: 'בהכנה',         tone: 'warn' },
+  picked:     { he: 'נאספה',         tone: 'info' },
+  otw:        { he: 'בדרך ללקוח',    tone: 'gold' },
+  delivered:  { he: 'נמסרה',         tone: 'ok' },
+};
+
+const COURIERS = [
+  { id: 'c1', name: 'יוסי אברהמי',  initials: 'יא', status: 'busy',    rating: 4.9, today: 6, vehicle: 'אופנוע', order: '4821', area: 'מחנה יהודה', x: 232, y: 230 },
+  { id: 'c2', name: 'דנה כהן',      initials: 'דכ', status: 'busy',    rating: 4.8, today: 5, vehicle: 'קטנוע', order: '4830', area: 'רחביה',      x: 150, y: 320 },
+  { id: 'c3', name: 'אמיר חדד',     initials: 'אח', status: 'idle',    rating: 4.7, today: 3, vehicle: 'אופניים', order: null, area: 'נחלאות',     x: 300, y: 180 },
+  { id: 'c4', name: 'מאיה לוי',     initials: 'מל', status: 'idle',    rating: 5.0, today: 8, vehicle: 'אופנוע', order: null, area: 'מרכז העיר',   x: 95,  y: 470 },
+  { id: 'c5', name: 'עומר פרץ',     initials: 'עפ', status: 'busy',    rating: 4.6, today: 4, vehicle: 'קטנוע', order: '4827', area: 'רוממה',      x: 330, y: 420 },
+  { id: 'c6', name: 'נועה שמש',     initials: 'נש', status: 'idle',    rating: 4.9, today: 7, vehicle: 'אופנוע', order: null, area: 'גאולה',      x: 200, y: 560 },
+  { id: 'c7', name: 'רון ביטון',    initials: 'רב', status: 'offline', rating: 4.5, today: 2, vehicle: 'אופניים', order: null, area: 'קטמון',     x: 120, y: 620 },
+  { id: 'c8', name: 'ליאת אזולאי',  initials: 'לא', status: 'busy',    rating: 4.8, today: 6, vehicle: 'קטנוע', order: '4825', area: 'בקעה',       x: 270, y: 300 },
+];
+
+const ORDERS = [
+  { id: '4832', rest: 'שווארמה מחנה יהודה', cust: 'רחוב יפו 42',     area: 'מרכז',     status: 'unassigned', courier: null, total: 91,  payout: 24, mins: 1,  ox: 220, oy: 250 },
+  { id: '4831', rest: 'פיצה רוממה',          cust: 'דרך חברון 18',    area: 'בקעה',     status: 'unassigned', courier: null, total: 116, payout: 28, mins: 3,  ox: 280, oy: 360 },
+  { id: '4830', rest: 'חומוס אליהו',         cust: 'בצלאל 9',         area: 'נחלאות',   status: 'preparing',  courier: 'c2', total: 64,  payout: 19, mins: 6,  ox: 150, oy: 300 },
+  { id: '4827', rest: 'המבורגר העתיקה',      cust: 'עזה 31',          area: 'רחביה',    status: 'picked',     courier: 'c5', total: 130, payout: 27, mins: 12, ox: 320, oy: 410 },
+  { id: '4825', rest: 'סושי בן יהודה',       cust: 'קק״ל 22',         area: 'קטמון',    status: 'otw',        courier: 'c8', total: 168, payout: 31, mins: 18, ox: 260, oy: 290 },
+  { id: '4821', rest: 'שווארמה מחנה יהודה', cust: 'אגריפס 76',       area: 'מחנה יהודה', status: 'otw',      courier: 'c1', total: 91,  payout: 24, mins: 22, ox: 232, oy: 230 },
+  { id: '4818', rest: 'בית הקפה של נחלאות',  cust: 'בן יהודה 4',      area: 'מרכז',     status: 'delivered',  courier: 'c4', total: 96,  payout: 22, mins: 34, ox: 100, oy: 200 },
+  { id: '4815', rest: 'פיצה רוממה',          cust: 'יפו 97',          area: 'רוממה',    status: 'delivered',  courier: 'c6', total: 78,  payout: 20, mins: 41, ox: 200, oy: 150 },
+];
+
+const RESTOS = [
+  { id: 'r1', name: 'שווארמה מחנה יהודה', area: 'מחנה יהודה', orders: 38, rating: 4.8, status: 'busy',  photo: pic('shawarma') },
+  { id: 'r2', name: 'פיצה רוממה',          area: 'רוממה',      orders: 27, rating: 4.6, status: 'open',  photo: pic('pizza') },
+  { id: 'r3', name: 'חומוס אליהו',         area: 'נחלאות',     orders: 52, rating: 4.9, status: 'busy',  photo: pic('hummus') },
+  { id: 'r4', name: 'המבורגר העתיקה',      area: 'העיר העתיקה', orders: 19, rating: 4.5, status: 'open',  photo: pic('burger') },
+  { id: 'r5', name: 'סושי בן יהודה',       area: 'מרכז העיר',  orders: 23, rating: 4.7, status: 'open',  photo: pic('sushi') },
+  { id: 'r6', name: 'בית הקפה של נחלאות',  area: 'נחלאות',     orders: 31, rating: 4.8, status: 'closed', photo: pic('coffee') },
+];
+
+const KPIS = [
+  { id: 'active',   label: 'הזמנות פעילות', value: 24, delta: '+12%', up: true,  icon: 'bag' },
+  { id: 'couriers', label: 'שליחים מחוברים', value: 18, sub: 'מתוך 26', icon: 'motorbike' },
+  { id: 'avg',      label: 'זמן משלוח ממוצע', value: '27 ד׳', delta: '−3 ד׳', up: true, icon: 'clock' },
+  { id: 'revenue',  label: 'הכנסה היום', value: '₪14,280', delta: '+8%', up: true, icon: 'tag' },
+];
+
+// orders-per-hour for the chart (10:00 → 22:00)
+const HOURLY = [
+  { h: '10', v: 18 }, { h: '11', v: 26 }, { h: '12', v: 52 }, { h: '13', v: 61 },
+  { h: '14', v: 44 }, { h: '15', v: 30 }, { h: '16', v: 28 }, { h: '17', v: 38 },
+  { h: '18', v: 58 }, { h: '19', v: 74 }, { h: '20', v: 69 }, { h: '21', v: 47 },
+];
+
+const courierById = (id) => COURIERS.find(c => c.id === id);
+
+Object.assign(window, { ORDER_STATUS, COURIERS, ORDERS, RESTOS, KPIS, HOURLY, courierById });
+
+  </script>
+  <script type="text/babel">
+// admin-shell.jsx — macOS window chrome + RTL sidebar + shared admin UI
+
+const toneColors = {
+  bad:  { bg: 'var(--bad-bg)',  fg: 'var(--bad)' },
+  ok:   { bg: 'var(--ok-bg)',   fg: 'var(--ok)' },
+  warn: { bg: 'var(--warn-bg)', fg: 'var(--warn)' },
+  info: { bg: 'var(--info-bg)', fg: 'var(--info)' },
+  gold: { bg: 'var(--gold-soft)', fg: 'var(--gold-deep)' },
+};
+
+function StatusBadge({ tone = 'gold', children, dot = true }) {
+  const c = toneColors[tone] || toneColors.gold;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px',
+      borderRadius: 999, fontSize: 12.5, fontWeight: 700, background: c.bg, color: c.fg, whiteSpace: 'nowrap' }}>
+      {dot && <span style={{ width: 7, height: 7, borderRadius: 99, background: c.fg }} />}
+      {children}
+    </span>
+  );
+}
+
+function Avatar({ initials, size = 36, color = 'var(--gold)', ring }) {
+  return (
+    <span style={{ width: size, height: size, borderRadius: 999, flex: '0 0 auto', display: 'inline-flex',
+      alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: size * 0.36,
+      background: 'var(--gold-soft)', color: 'var(--gold-deep)',
+      boxShadow: ring ? `0 0 0 2px ${ring}` : 'none' }}>{initials}</span>
+  );
+}
+
+const cStatus = {
+  busy:    { he: 'במשלוח', tone: 'gold' },
+  idle:    { he: 'זמין',    tone: 'ok' },
+  offline: { he: 'מנותק',   tone: 'bad' },
+};
+const rStatus = {
+  open:   { he: 'פתוח',  tone: 'ok' },
+  busy:   { he: 'עמוס',  tone: 'warn' },
+  closed: { he: 'סגור',  tone: 'bad' },
+};
+
+/* ---------- Window shell ---------- */
+const NAV = [
+  { id: 'live',    label: 'מפת תפעול', icon: 'pin' },
+  { id: 'overview',label: 'דאשבורד',   icon: 'sliders' },
+  { id: 'orders',  label: 'הזמנות',    icon: 'bag' },
+  { id: 'couriers',label: 'שליחים',    icon: 'motorbike' },
+  { id: 'restos',  label: 'מסעדות',    icon: 'tag' },
+];
+
+function AdminWindow({ view, setView, dark, children, badges }) {
+  return (
+    <div className={(dark ? 'theme-dark ' : '') + 'adm-win'} style={{
+      width: '100%', height: '100%', borderRadius: 0, overflow: 'hidden', direction: 'rtl',
+      background: 'var(--paper-2)', color: 'var(--ink)',
+      boxShadow: 'none',
+      display: 'flex', flexDirection: 'column', fontFamily: "'Heebo', sans-serif" }}>
+
+      {/* title bar */}
+      <div style={{ height: 46, flex: '0 0 auto', display: 'flex', alignItems: 'center',
+        padding: '0 16px', background: 'var(--paper)', borderBottom: '1px solid var(--line)', position: 'relative' }}>
+        <div style={{ position: 'absolute', insetInlineStart: 16, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+          <MacTrafficLights />
+        </div>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-3)' }}>
+          השליח · מוקד התפעול — ירושלים
+        </div>
+      </div>
+
+      {/* body: sidebar (right in RTL) + content */}
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        <nav style={{ width: 236, flex: '0 0 auto', background: 'var(--paper)', borderInlineStart: '1px solid var(--line)',
+          display: 'flex', flexDirection: 'column', padding: '18px 14px' }}>
+          {/* brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 18px' }}>
+            <span style={{ width: 38, height: 38, borderRadius: 11, background: 'linear-gradient(160deg, var(--gold-bright), var(--gold-deep))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 20,
+              boxShadow: 'var(--shadow-gold)' }}>ש</span>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-.01em' }}>השליח</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-4)' }}>Operations</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {NAV.map(n => {
+              const active = view === n.id;
+              return (
+                <button key={n.id} onClick={() => setView(n.id)} style={{ all: 'unset', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 11, padding: '11px 12px', borderRadius: 12,
+                  background: active ? 'var(--gold-tint)' : 'transparent',
+                  boxShadow: active ? 'inset 0 0 0 1.5px var(--gold-soft)' : 'none',
+                  color: active ? 'var(--gold-deep)' : 'var(--ink-2)', transition: 'background .15s ease' }}>
+                  <Icon name={n.icon} size={20} stroke={active ? 'var(--gold-deep)' : 'var(--ink-3)'} sw={2} />
+                  <span style={{ fontSize: 14.5, fontWeight: active ? 800 : 600 }}>{n.label}</span>
+                  {badges && badges[n.id] ? (
+                    <span className="num" style={{ marginInlineStart: 'auto', minWidth: 20, height: 20, borderRadius: 99,
+                      background: active ? 'var(--gold)' : 'var(--bad)', color: active ? 'var(--ink)' : '#fff',
+                      fontSize: 11.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
+                      {badges[n.id]}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* user */}
+          <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 11, padding: '12px 8px 4px',
+            borderTop: '1px solid var(--line)' }}>
+            <Avatar initials="שם" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800 }}>שירה מנהלת</div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-4)' }}>מוקדנית · משמרת בוקר</div>
+            </div>
+          </div>
+        </nav>
+
+        <main style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+/* page header used by non-map screens */
+function PageHead({ title, sub, right }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16,
+      padding: '22px 28px 18px', flex: '0 0 auto' }}>
+      <div>
+        <h1 style={{ margin: 0, fontSize: 25, fontWeight: 900, letterSpacing: '-.015em' }}>{title}</h1>
+        {sub && <div style={{ fontSize: 13.5, color: 'var(--ink-4)', fontWeight: 600, marginTop: 4 }}>{sub}</div>}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function SearchBox({ placeholder = 'חיפוש…', value, onChange }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'var(--paper)', borderRadius: 11,
+      padding: '9px 13px', boxShadow: 'inset 0 0 0 1.5px var(--line-2)', minWidth: 240 }}>
+      <Icon name="search" size={18} stroke="var(--ink-4)" />
+      <input value={value} onChange={e => onChange?.(e.target.value)} placeholder={placeholder}
+        style={{ all: 'unset', flex: 1, fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: 'var(--ink)' }} />
+    </div>
+  );
+}
+
+Object.assign(window, { AdminWindow, StatusBadge, Avatar, PageHead, SearchBox, cStatus, rStatus, NAV });
+
+  </script>
+  <script type="text/babel">
+// admin-live.jsx — Live operations map (hero) + orders rail + assignment
+
+function OpsMap({ couriers, orders, selected, onPick, dark }) {
+  const statusPin = { busy: 'var(--gold)', idle: 'var(--ok)', offline: 'var(--ink-4)' };
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: 'var(--map-land)' }}>
+      <svg viewBox="0 0 440 620" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <rect x="0" y="0" width="440" height="620" fill="var(--map-land)" />
+        {[[20,30,130,90],[180,20,150,110],[350,40,90,120],[40,170,110,120],[200,180,150,130],[370,190,80,130],
+          [20,340,120,150],[200,360,150,120],[370,350,80,150],[30,540,150,90],[210,540,150,90]].map((b,i)=>(
+          <rect key={i} x={b[0]} y={b[1]} width={b[2]} height={b[3]} rx="8" fill="var(--map-block)" />
+        ))}
+        <rect x="180" y="310" width="150" height="120" rx="14" fill="var(--map-park)" />
+        <g stroke="var(--map-street)" strokeWidth="14" strokeLinecap="round">
+          <line x1="-10" y1="150" x2="450" y2="145"/>
+          <line x1="-10" y1="330" x2="450" y2="335"/>
+          <line x1="-10" y1="520" x2="450" y2="515"/>
+          <line x1="170" y1="-10" x2="178" y2="630"/>
+          <line x1="350" y1="-10" x2="358" y2="630"/>
+        </g>
+        <g stroke="var(--map-street2)" strokeWidth="6" strokeLinecap="round">
+          <line x1="70" y1="-10" x2="74" y2="630"/>
+          <line x1="270" y1="-10" x2="274" y2="630"/>
+          <line x1="-10" y1="240" x2="450" y2="238"/>
+          <line x1="-10" y1="430" x2="450" y2="427"/>
+        </g>
+
+        {/* order pins (unassigned pulse) */}
+        {orders.filter(o => o.status !== 'delivered').map((o, i) => {
+          const un = o.status === 'unassigned';
+          const sel = selected === o.id;
+          return (
+            <g key={o.id} transform={`translate(${o.ox},${o.oy})`} style={{ cursor: 'pointer' }} onClick={() => onPick(o.id)}>
+              {un && <circle r="20" fill="var(--bad)" opacity=".16">
+                <animate attributeName="r" values="12;26" dur="1.8s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values=".3;0" dur="1.8s" repeatCount="indefinite"/>
+              </circle>}
+              <rect x="-12" y="-12" width="24" height="24" rx="7" transform="rotate(45)"
+                fill={un ? 'var(--bad)' : 'var(--paper)'} stroke={un ? '#fff' : 'var(--gold)'}
+                strokeWidth={sel ? 3.5 : 2.5} />
+              {sel && <circle r="22" fill="none" stroke="var(--gold-deep)" strokeWidth="2.5" strokeDasharray="3 4" />}
+            </g>
+          );
+        })}
+
+        {/* courier markers */}
+        {couriers.filter(c => c.status !== 'offline').map(c => (
+          <g key={c.id} transform={`translate(${c.x},${c.y})`}>
+            <circle r="14" fill={statusPin[c.status]} stroke="#fff" strokeWidth="3"/>
+            <text y="4.5" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="800" fontFamily="Heebo, sans-serif">{c.initials}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function LiveScreen({ orders, couriers, onAssign, dark }) {
+  const [selected, setSelected] = React.useState(null);
+  const [assigning, setAssigning] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
+
+  const sel = orders.find(o => o.id === selected);
+  const idleCouriers = couriers.filter(c => c.status === 'idle');
+  const counts = {
+    online: couriers.filter(c => c.status !== 'offline').length,
+    unassigned: orders.filter(o => o.status === 'unassigned').length,
+    active: orders.filter(o => !['delivered'].includes(o.status)).length,
+  };
+
+  const doAssign = (courierId) => {
+    onAssign(sel.id, courierId);
+    setAssigning(false);
+    const c = courierById(courierId);
+    setToast(`הזמנה #${sel.id} שויכה ל${c.name}`);
+    setSelected(null);
+    setTimeout(() => setToast(null), 2600);
+  };
+
+  return (
+    <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
+      {/* MAP (center/right) */}
+      <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
+        <OpsMap couriers={couriers} orders={orders} selected={selected} onPick={setSelected} dark={dark} />
+
+        {/* floating stat chips */}
+        <div style={{ position: 'absolute', top: 18, insetInlineEnd: 18, display: 'flex', gap: 10 }}>
+          <FloatStat label="הזמנות פעילות" value={counts.active} tone="gold" />
+          <FloatStat label="ממתינות לשיוך" value={counts.unassigned} tone="bad" />
+          <FloatStat label="שליחים מחוברים" value={counts.online} tone="ok" />
+        </div>
+
+        {/* legend */}
+        <div style={{ position: 'absolute', bottom: 18, insetInlineEnd: 18, display: 'flex', gap: 14,
+          background: 'var(--paper)', borderRadius: 12, padding: '10px 14px', boxShadow: 'var(--shadow-md)', fontSize: 12.5, fontWeight: 700 }}>
+          <Leg2 c="var(--ok)" t="שליח זמין" />
+          <Leg2 c="var(--gold)" t="שליח במשלוח" />
+          <Leg2 c="var(--bad)" t="הזמנה ללא שיוך" sq />
+        </div>
+
+        {/* selected order popover */}
+        {sel && (
+          <div style={{ position: 'absolute', bottom: 18, insetInlineStart: 18, width: 320, background: 'var(--paper)',
+            borderRadius: 16, boxShadow: 'var(--shadow-lg)', padding: 16, animation: 'fadeUp .25s ease' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div className="num" style={{ fontSize: 17, fontWeight: 900 }}>הזמנה #{sel.id}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 600, marginTop: 2 }}>{sel.rest}</div>
+              </div>
+              <StatusBadge tone={ORDER_STATUS[sel.status].tone}>{ORDER_STATUS[sel.status].he}</StatusBadge>
+            </div>
+            <div style={{ display: 'flex', gap: 16, margin: '12px 0', fontSize: 13, fontWeight: 600, color: 'var(--ink-3)' }}>
+              <span><Icon name="pin" size={14} stroke="var(--ink-4)" style={{ verticalAlign: -2 }} /> {sel.cust} · {sel.area}</span>
+            </div>
+            {sel.courier ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--paper-2)', borderRadius: 11, padding: '9px 11px' }}>
+                <Avatar initials={courierById(sel.courier).initials} size={30} />
+                <span style={{ fontSize: 13.5, fontWeight: 700 }}>{courierById(sel.courier).name}</span>
+                <span style={{ marginInlineStart: 'auto', fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600 }}>משויך</span>
+              </div>
+            ) : (
+              <button className="btn btn-primary" onClick={() => setAssigning(true)} style={{ width: '100%', height: 44, borderRadius: 12, fontSize: 14.5 }}>
+                <Icon name="motorbike" size={19} stroke="var(--ink)" sw={2} /> שייך שליח
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* toast */}
+        {toast && (
+          <div style={{ position: 'absolute', top: 18, insetInlineStart: '50%', transform: 'translateX(-50%)',
+            background: 'var(--ok)', color: '#fff', borderRadius: 12, padding: '11px 18px', fontSize: 14, fontWeight: 700,
+            boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeUp .3s ease' }}>
+            <Icon name="check" size={18} stroke="#fff" sw={3} /> {toast}
+          </div>
+        )}
+      </div>
+
+      {/* ORDERS RAIL (left in RTL) */}
+      <aside style={{ width: 366, flex: '0 0 auto', background: 'var(--paper)', borderInlineEnd: '1px solid var(--line)',
+        display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div style={{ padding: '18px 20px 12px', borderBottom: '1px solid var(--line)' }}>
+          <div style={{ fontSize: 17, fontWeight: 900 }}>תור הזמנות חי</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600, marginTop: 3 }}>
+            {counts.unassigned} ממתינות לשיוך · {counts.active} פעילות</div>
+        </div>
+        <div className="hsb" style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {orders.filter(o => o.status !== 'delivered').map(o => {
+            const c = o.courier ? courierById(o.courier) : null;
+            const isSel = selected === o.id;
+            return (
+              <button key={o.id} onClick={() => setSelected(o.id)} style={{ all: 'unset', cursor: 'pointer',
+                background: isSel ? 'var(--gold-tint)' : 'var(--paper-2)', borderRadius: 14, padding: '13px 14px',
+                boxShadow: isSel ? 'inset 0 0 0 2px var(--gold)' : 'inset 0 0 0 1px var(--line)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="num" style={{ fontSize: 15, fontWeight: 900 }}>#{o.id}</span>
+                  <StatusBadge tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].he}</StatusBadge>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 7 }}>{o.rest}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600, marginTop: 2 }}>
+                  <Icon name="pin" size={13} stroke="var(--ink-4)" style={{ verticalAlign: -2 }} /> {o.cust} · {o.area}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                  {c ? (
+                    <><Avatar initials={c.initials} size={24} /><span style={{ fontSize: 12.5, fontWeight: 700 }}>{c.name}</span></>
+                  ) : (
+                    <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--bad)' }}>טרם שויך שליח</span>
+                  )}
+                  <span className="num" style={{ marginInlineStart: 'auto', fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 700 }}>
+                    לפני {o.mins} ד׳</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* assignment modal */}
+      {assigning && sel && (
+        <div onClick={() => setAssigning(false)} style={{ position: 'absolute', inset: 0, zIndex: 20,
+          background: 'rgba(23,20,13,.5)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 460, maxHeight: '78%', background: 'var(--paper)',
+            borderRadius: 20, boxShadow: 'var(--shadow-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            animation: 'scaleIn .2s ease' }}>
+            <div style={{ padding: '20px 22px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 18, fontWeight: 900 }}>שיוך שליח להזמנה #{sel.id}</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 600, marginTop: 3 }}>
+                {idleCouriers.length} שליחים זמינים · ממוינים לפי קרבה</div>
+            </div>
+            <div className="hsb" style={{ overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {idleCouriers.map((c, i) => (
+                <button key={c.id} onClick={() => doAssign(c.id)} style={{ all: 'unset', cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, background: 'var(--paper-2)',
+                  boxShadow: 'inset 0 0 0 1px var(--line)' }}>
+                  <Avatar initials={c.initials} size={42} ring="var(--ok)" />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800 }}>{c.name}</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600, marginTop: 2 }}>
+                      {c.vehicle} · {c.area} · ⭐ {c.rating}</div>
+                  </div>
+                  <span className="num" style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--gold-deep)' }}>{(0.6 + i * 0.5).toFixed(1)} ק״מ</span>
+                  <Icon name="back" size={20} stroke="var(--gold-deep)" sw={2.4} style={{ transform: 'scaleX(-1)' }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FloatStat({ label, value, tone }) {
+  const c = toneColors[tone];
+  return (
+    <div style={{ background: 'var(--paper)', borderRadius: 13, padding: '10px 15px', boxShadow: 'var(--shadow-md)', minWidth: 92 }}>
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-4)' }}>{label}</div>
+      <div className="num" style={{ fontSize: 24, fontWeight: 900, color: c.fg, marginTop: 1 }}>{value}</div>
+    </div>
+  );
+}
+function Leg2({ c, t, sq }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--ink-2)' }}>
+      <span style={{ width: 11, height: 11, borderRadius: sq ? 3 : 99, background: c, transform: sq ? 'rotate(45deg)' : 'none' }} /> {t}
+    </span>
+  );
+}
+
+Object.assign(window, { LiveScreen });
+
+  </script>
+  <script type="text/babel">
+// admin-overview.jsx — KPI dashboard + charts
+
+function OverviewScreen({ orders, couriers }) {
+  const maxV = Math.max(...HOURLY.map(h => h.v));
+  const cStats = {
+    busy: couriers.filter(c => c.status === 'busy').length,
+    idle: couriers.filter(c => c.status === 'idle').length,
+    offline: couriers.filter(c => c.status === 'offline').length,
+  };
+  const total = couriers.length;
+  const recent = orders.slice(0, 5);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <PageHead title="דאשבורד" sub="סקירת תפעול · היום, 2 ביוני 2026"
+        right={<div style={{ display: 'flex', gap: 9 }}>
+          <Seg active>היום</Seg><Seg>השבוע</Seg><Seg>החודש</Seg>
+        </div>} />
+
+      <div className="hsb" style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
+        {/* KPI cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          {KPIS.map(k => (
+            <div key={k.id} style={{ background: 'var(--paper)', borderRadius: 18, padding: '18px 20px',
+              boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--gold-tint)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name={k.icon} size={21} stroke="var(--gold-deep)" sw={2} /></span>
+                {k.delta && (
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: k.up ? 'var(--ok)' : 'var(--bad)',
+                    background: k.up ? 'var(--ok-bg)' : 'var(--bad-bg)', borderRadius: 99, padding: '3px 9px' }}>{k.delta}</span>
+                )}
+              </div>
+              <div className="num" style={{ fontSize: 30, fontWeight: 900, marginTop: 14, letterSpacing: '-.02em' }}>{k.value}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-4)', marginTop: 2 }}>
+                {k.label}{k.sub ? ' · ' + k.sub : ''}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* chart + courier split */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 16, marginTop: 16 }}>
+          {/* bar chart */}
+          <div style={{ background: 'var(--paper)', borderRadius: 18, padding: '20px 22px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>הזמנות לפי שעה</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-4)' }}>שיא: 19:00</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 200, marginTop: 20 }}>
+              {HOURLY.map((h, i) => {
+                const peak = h.v === maxV;
+                return (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, height: '100%', justifyContent: 'flex-end' }}>
+                    <div style={{ width: '100%', height: `${(h.v / maxV) * 100}%`, borderRadius: '7px 7px 3px 3px',
+                      background: peak ? 'linear-gradient(180deg, var(--gold-bright), var(--gold-deep))' : 'var(--gold-soft)',
+                      position: 'relative' }}>
+                      {peak && <span className="num" style={{ position: 'absolute', top: -20, insetInlineStart: '50%',
+                        transform: 'translateX(50%)', fontSize: 12, fontWeight: 800, color: 'var(--gold-deep)' }}>{h.v}</span>}
+                    </div>
+                    <span className="num" style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-4)' }}>{h.h}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* courier status */}
+          <div style={{ background: 'var(--paper)', borderRadius: 18, padding: '20px 22px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>סטטוס שליחים</div>
+            <Donut busy={cStats.busy} idle={cStats.idle} offline={cStats.offline} total={total} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 18 }}>
+              <SplitRow c="var(--gold)" label="במשלוח" v={cStats.busy} total={total} />
+              <SplitRow c="var(--ok)" label="זמינים" v={cStats.idle} total={total} />
+              <SplitRow c="var(--ink-4)" label="מנותקים" v={cStats.offline} total={total} />
+            </div>
+          </div>
+        </div>
+
+        {/* recent orders */}
+        <div style={{ background: 'var(--paper)', borderRadius: 18, padding: '20px 22px', boxShadow: 'var(--shadow-sm)', marginTop: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>הזמנות אחרונות</div>
+          {recent.map((o, i) => {
+            const c = o.courier ? courierById(o.courier) : null;
+            return (
+              <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0',
+                borderTop: i ? '1px solid var(--line)' : 'none' }}>
+                <span className="num" style={{ fontSize: 14, fontWeight: 900, width: 56 }}>#{o.id}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, flex: 1 }}>{o.rest}</span>
+                <span style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 600, flex: 1 }}>{o.cust} · {o.area}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{c ? c.name : '—'}</span>
+                <span className="num" style={{ fontSize: 14, fontWeight: 800, width: 60 }}>₪{o.total}</span>
+                <StatusBadge tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].he}</StatusBadge>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Seg({ children, active }) {
+  return (
+    <button style={{ all: 'unset', cursor: 'pointer', padding: '8px 16px', borderRadius: 10, fontSize: 13.5, fontWeight: 700,
+      background: active ? 'var(--ink)' : 'var(--paper)', color: active ? '#fff' : 'var(--ink-3)',
+      boxShadow: active ? 'none' : 'inset 0 0 0 1.5px var(--line-2)' }}>{children}</button>
+  );
+}
+
+function Donut({ busy, idle, offline, total }) {
+  const R = 52, C = 2 * Math.PI * R;
+  const segs = [
+    { v: busy, color: 'var(--gold)' },
+    { v: idle, color: 'var(--ok)' },
+    { v: offline, color: 'var(--ink-4)' },
+  ];
+  let off = 0;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+      <div style={{ position: 'relative', width: 140, height: 140 }}>
+        <svg width="140" height="140" viewBox="0 0 140 140" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="70" cy="70" r={R} fill="none" stroke="var(--paper-3)" strokeWidth="16" />
+          {segs.map((s, i) => {
+            const len = (s.v / total) * C;
+            const el = <circle key={i} cx="70" cy="70" r={R} fill="none" stroke={s.color} strokeWidth="16"
+              strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-off} strokeLinecap="butt" />;
+            off += len;
+            return el;
+          })}
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="num" style={{ fontSize: 28, fontWeight: 900 }}>{total}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-4)' }}>שליחים</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SplitRow({ c, label, v, total }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ width: 10, height: 10, borderRadius: 99, background: c }} />
+      <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-2)', flex: 1 }}>{label}</span>
+      <span className="num" style={{ fontSize: 14, fontWeight: 800 }}>{v}</span>
+      <span className="num" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-4)', width: 38, textAlign: 'left' }}>
+        {Math.round((v / total) * 100)}%</span>
+    </div>
+  );
+}
+
+Object.assign(window, { OverviewScreen });
+
+  </script>
+  <script type="text/babel">
+// admin-tables.jsx — Orders table, Couriers, Restaurants
+
+/* ===================== ORDERS TABLE ===================== */
+function OrdersScreen({ orders, couriers, onAssign }) {
+  const [q, setQ] = React.useState('');
+  const [filter, setFilter] = React.useState('all');
+
+  const filters = [
+    { id: 'all', he: 'הכל' },
+    { id: 'unassigned', he: 'ללא שיוך' },
+    { id: 'active', he: 'פעילות' },
+    { id: 'delivered', he: 'נמסרו' },
+  ];
+  let list = orders;
+  if (filter === 'unassigned') list = list.filter(o => o.status === 'unassigned');
+  else if (filter === 'active') list = list.filter(o => !['delivered', 'unassigned'].includes(o.status));
+  else if (filter === 'delivered') list = list.filter(o => o.status === 'delivered');
+  if (q.trim()) list = list.filter(o => (o.id + o.rest + o.cust).includes(q.trim()));
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <PageHead title="הזמנות" sub={`${orders.length} הזמנות היום`}
+        right={<SearchBox placeholder="חיפוש לפי מס׳, מסעדה או כתובת" value={q} onChange={setQ} />} />
+
+      <div style={{ padding: '0 28px 14px', display: 'flex', gap: 9 }}>
+        {filters.map(f => (
+          <button key={f.id} onClick={() => setFilter(f.id)} style={{ all: 'unset', cursor: 'pointer',
+            padding: '8px 16px', borderRadius: 10, fontSize: 13.5, fontWeight: 700,
+            background: filter === f.id ? 'var(--ink)' : 'var(--paper)', color: filter === f.id ? '#fff' : 'var(--ink-3)',
+            boxShadow: filter === f.id ? 'none' : 'inset 0 0 0 1.5px var(--line-2)' }}>{f.he}</button>
+        ))}
+      </div>
+
+      <div className="hsb" style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
+        <div style={{ background: 'var(--paper)', borderRadius: 16, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+          {/* header */}
+          <div style={{ display: 'grid', gridTemplateColumns: '90px 1.4fr 1.4fr 1.2fr 90px 130px 120px',
+            gap: 12, padding: '14px 20px', background: 'var(--paper-2)', fontSize: 12.5, fontWeight: 800, color: 'var(--ink-4)',
+            borderBottom: '1px solid var(--line)' }}>
+            <span>מס׳</span><span>מסעדה</span><span>כתובת מסירה</span><span>שליח</span><span>סכום</span><span>סטטוס</span><span></span>
+          </div>
+          {list.map((o, i) => {
+            const c = o.courier ? courierById(o.courier) : null;
+            return (
+              <div key={o.id} style={{ display: 'grid', gridTemplateColumns: '90px 1.4fr 1.4fr 1.2fr 90px 130px 120px',
+                gap: 12, padding: '13px 20px', alignItems: 'center', fontSize: 13.5,
+                borderTop: i ? '1px solid var(--line)' : 'none' }}>
+                <span className="num" style={{ fontWeight: 900 }}>#{o.id}</span>
+                <span style={{ fontWeight: 700 }}>{o.rest}</span>
+                <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>{o.cust} · {o.area}</span>
+                <span style={{ fontWeight: 700 }}>
+                  {c ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                    <Avatar initials={c.initials} size={24} />{c.name}</span>
+                    : <span style={{ color: 'var(--bad)', fontWeight: 800 }}>—</span>}
+                </span>
+                <span className="num" style={{ fontWeight: 800 }}>₪{o.total}</span>
+                <StatusBadge tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].he}</StatusBadge>
+                <span style={{ textAlign: 'left' }}>
+                  {o.status === 'unassigned'
+                    ? <button className="btn btn-primary" onClick={() => onAssign(o.id, couriers.find(x => x.status === 'idle')?.id)}
+                        style={{ height: 34, borderRadius: 9, padding: '0 14px', fontSize: 13 }}>שייך</button>
+                    : <button style={{ all: 'unset', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'var(--gold-deep)' }}>פרטים ›</button>}
+                </span>
+              </div>
+            );
+          })}
+          {list.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-4)', fontWeight: 600 }}>אין הזמנות בקטגוריה זו</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== COURIERS ===================== */
+function CouriersScreen({ couriers }) {
+  const [q, setQ] = React.useState('');
+  const list = q.trim() ? couriers.filter(c => (c.name + c.area).includes(q.trim())) : couriers;
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <PageHead title="שליחים" sub={`${couriers.filter(c => c.status !== 'offline').length} מחוברים מתוך ${couriers.length}`}
+        right={<SearchBox placeholder="חיפוש שליח" value={q} onChange={setQ} />} />
+      <div className="hsb" style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {list.map(c => {
+            const st = cStatus[c.status];
+            return (
+              <div key={c.id} style={{ background: 'var(--paper)', borderRadius: 18, padding: 18, boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                  <Avatar initials={c.initials} size={50} ring={c.status === 'idle' ? 'var(--ok)' : (c.status === 'busy' ? 'var(--gold)' : 'var(--line-2)')} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>{c.name}</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600, marginTop: 2 }}>{c.vehicle} · {c.area}</div>
+                  </div>
+                  <StatusBadge tone={st.tone}>{st.he}</StatusBadge>
+                </div>
+                <div style={{ display: 'flex', gap: 0, marginTop: 16, background: 'var(--paper-2)', borderRadius: 13,
+                  boxShadow: 'inset 0 0 0 1px var(--line)' }}>
+                  <Mini label="דירוג" value={'⭐ ' + c.rating} />
+                  <span style={{ width: 1, background: 'var(--line)', margin: '8px 0' }} />
+                  <Mini label="משלוחים היום" value={c.today} />
+                  <span style={{ width: 1, background: 'var(--line)', margin: '8px 0' }} />
+                  <Mini label="הזמנה נוכחית" value={c.order ? '#' + c.order : '—'} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+function Mini({ label, value }) {
+  return (
+    <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px' }}>
+      <div className="num" style={{ fontSize: 15, fontWeight: 800 }}>{value}</div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-4)', marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+/* ===================== RESTAURANTS ===================== */
+function RestosScreen({ restos }) {
+  const [q, setQ] = React.useState('');
+  const list = q.trim() ? restos.filter(r => (r.name + r.area).includes(q.trim())) : restos;
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <PageHead title="מסעדות ועסקים" sub={`${restos.length} עסקים פעילים בפלטפורמה`}
+        right={<SearchBox placeholder="חיפוש מסעדה" value={q} onChange={setQ} />} />
+      <div className="hsb" style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {list.map(r => {
+            const st = rStatus[r.status];
+            return (
+              <div key={r.id} style={{ background: 'var(--paper)', borderRadius: 18, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ position: 'relative' }}>
+                  <Photo src={r.photo} label={r.name} style={{ width: '100%', height: 116 }} />
+                  <div style={{ position: 'absolute', top: 10, insetInlineStart: 10 }}>
+                    <StatusBadge tone={st.tone}>{st.he}</StatusBadge>
+                  </div>
+                </div>
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ fontSize: 16, fontWeight: 800 }}>{r.name}</span>
+                    <span className="num" style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--gold-deep)' }}>⭐ {r.rating}</span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600, marginTop: 3 }}>{r.area}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                    <Icon name="bag" size={17} stroke="var(--ink-4)" sw={2} />
+                    <span className="num" style={{ fontSize: 14, fontWeight: 800 }}>{r.orders}</span>
+                    <span style={{ fontSize: 12.5, color: 'var(--ink-4)', fontWeight: 600 }}>הזמנות היום</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { OrdersScreen, CouriersScreen, RestosScreen });
+
+  </script>
+  <script type="text/babel">
+// admin-app.jsx — WaVi / השליח — operations center root
+
+const { useState: adState, useEffect: adEffect, useCallback: adCb } = React;
+
+const HOME_MAP = { 'מפת תפעול': 'live', 'דאשבורד': 'overview', 'טבלת הזמנות': 'orders' };
+
+const AD_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "בהיר",
+  "homeScreen": "מפת תפעול",
+  "gold": "#C9A24B"
+}/*EDITMODE-END*/;
+
+function AdminApp() {
+  const [t, setTweak] = useTweaks(AD_DEFAULTS);
+  const [orders, setOrders] = adState(ORDERS);
+  const [couriers, setCouriers] = adState(COURIERS);
+  const [view, setView] = adState(HOME_MAP[t.homeScreen] || 'live');
+
+  // when the home-screen tweak changes, jump there
+  adEffect(() => { setView(HOME_MAP[t.homeScreen] || 'live'); }, [t.homeScreen]);
+
+  adEffect(() => {
+    const r = document.documentElement.style;
+    r.setProperty('--gold', t.gold);
+    r.setProperty('--gold-bright', `color-mix(in oklab, ${t.gold}, white 24%)`);
+    r.setProperty('--gold-deep',   `color-mix(in oklab, ${t.gold}, black 28%)`);
+  }, [t.gold]);
+
+  const dark = t.theme === 'כהה';
+
+  const assign = adCb((orderId, courierId) => {
+    if (!courierId) return;
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'assigned', courier: courierId } : o));
+    setCouriers(prev => prev.map(c => c.id === courierId ? { ...c, status: 'busy', order: orderId } : c));
+  }, []);
+
+  const badges = { orders: orders.filter(o => o.status === 'unassigned').length || null };
+
+  let screen;
+  if (view === 'live')      screen = <LiveScreen orders={orders} couriers={couriers} onAssign={assign} dark={dark} />;
+  else if (view === 'overview') screen = <OverviewScreen orders={orders} couriers={couriers} />;
+  else if (view === 'orders')   screen = <OrdersScreen orders={orders} couriers={couriers} onAssign={assign} />;
+  else if (view === 'couriers') screen = <CouriersScreen couriers={couriers} />;
+  else if (view === 'restos')   screen = <RestosScreen restos={RESTOS} />;
+
+  return (
+    <AdminStage>
+      <AdminWindow view={view} setView={setView} dark={dark} badges={badges}>
+        <div key={view} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
+          animation: 'fadeUp .3s ease' }}>
+          {screen}
+        </div>
+      </AdminWindow>
+
+      <TweaksPanel>
+        <TweakSection label="תצוגה" />
+        <TweakRadio label="ערכת נושא" value={t.theme} options={['בהיר', 'כהה']}
+          onChange={(v) => setTweak('theme', v)} />
+        <TweakRadio label="מסך בית" value={t.homeScreen} options={['מפת תפעול', 'דאשבורד', 'טבלת הזמנות']}
+          onChange={(v) => setTweak('homeScreen', v)} />
+        <TweakColor label="גוון הזהב" value={t.gold}
+          options={['#C9A24B', '#B8902F', '#D4AF37', '#C08A3E']}
+          onChange={(v) => setTweak('gold', v)} />
+      </TweaksPanel>
+    </AdminStage>
+  );
+}
+
+function AdminStage({ children }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+      {children}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp />);
+
+  </script>
+</body>
+</html>
