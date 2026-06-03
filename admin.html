@@ -208,6 +208,10 @@ html.no-photos .ph > .ph-img { display: none !important; }
 /* Entrance animations are transform-only (never start from opacity:0 or off-screen)
    so that if the browser pauses them at frame 0 — e.g. a throttled/backgrounded
    iframe during screenshot capture — the content is still fully visible. */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
 @keyframes fadeUp {
   from { transform: translateY(10px); }
   to   { transform: translateY(0); }
@@ -1702,6 +1706,33 @@ function LiveScreen({ orders, couriers, onAssign, dark }) {
   const [selected, setSelected] = React.useState(null);
   const [assigning, setAssigning] = React.useState(false);
   const [toast, setToast] = React.useState(null);
+  const [feed, setFeed] = React.useState([
+    { id:1, icon:'✅', msg:'הזמנה #4810 נמסרה ללקוח', t:'לפני 2 ד׳', tone:'ok' },
+    { id:2, icon:'🛵', msg:'אורן מזרחי קיבל הזמנה #4812', t:'לפני 4 ד׳', tone:'gold' },
+    { id:3, icon:'📦', msg:'הזמנה #4808 נאספה מסאלח',   t:'לפני 6 ד׳', tone:'gold' },
+    { id:4, icon:'🆕', msg:'הזמנה #4813 נכנסה למערכת',  t:'לפני 8 ד׳', tone:'none' },
+    { id:5, icon:'✅', msg:'הזמנה #4805 נמסרה ללקוח',    t:'לפני 11 ד׳', tone:'ok' },
+  ]);
+  const feedIdRef = React.useRef(10);
+  const NEW_EVENTS = [
+    'הזמנה חדשה נכנסה מפיצה רוממה',
+    'שליחה מרים טובה יצאה למשלוח',
+    'הזמנה #48XX שויכה לאורן מזרחי',
+    'לקוח אישר קבלת הזמנה',
+    'הזמנה חדשה מחומוס אליהו',
+    'שליח הגיע לנקודת האיסוף',
+  ];
+  React.useEffect(() => {
+    const t = setInterval(() => {
+      feedIdRef.current += 1;
+      const id = feedIdRef.current;
+      const msg = NEW_EVENTS[id % NEW_EVENTS.length].replace('XX', String(4810 + id));
+      const tone = ['ok','gold','none','ok','gold'][id % 5];
+      const icon = tone === 'ok' ? '✅' : tone === 'gold' ? '🛵' : '🆕';
+      setFeed(f => [{ id, icon, msg, t:'עכשיו', tone }, ...f.slice(0, 7)]);
+    }, 5000);
+    return () => clearInterval(t);
+  }, []);
 
   const sel = orders.find(o => o.id === selected);
   const idleCouriers = couriers.filter(c => c.status === 'idle');
@@ -1814,6 +1845,26 @@ function LiveScreen({ orders, couriers, onAssign, dark }) {
               </button>
             );
           })}
+        </div>
+
+        {/* activity feed */}
+        <div style={{ borderTop:'1px solid var(--line)', flex:'0 0 auto' }}>
+          <div style={{ padding:'12px 20px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div style={{ fontSize:13.5, fontWeight:900 }}>פעילות חיה</div>
+            <span style={{ width:8, height:8, borderRadius:99, background:'var(--ok)',
+              boxShadow:'0 0 6px var(--ok)', animation:'pulseRing 1.5s ease infinite' }} />
+          </div>
+          <div style={{ maxHeight:190, overflowY:'auto', padding:'0 14px 12px', display:'flex', flexDirection:'column', gap:6 }}>
+            {feed.map((e, i) => (
+              <div key={e.id} style={{ display:'flex', alignItems:'center', gap:9,
+                padding:'8px 10px', borderRadius:10, background:'var(--paper-2)',
+                animation: i === 0 ? 'fadeUp .3s ease' : 'none', opacity: 1 - i * 0.1 }}>
+                <span style={{ fontSize:15 }}>{e.icon}</span>
+                <span style={{ flex:1, fontSize:12.5, fontWeight:700, color:'var(--ink-2)' }}>{e.msg}</span>
+                <span style={{ fontSize:11, color:'var(--ink-4)', fontWeight:600, flex:'0 0 auto' }}>{e.t}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </aside>
 
@@ -2031,10 +2082,118 @@ Object.assign(window, { OverviewScreen });
   <script type="text/babel">
 // admin-tables.jsx — Orders table, Couriers, Restaurants
 
+/* ── order detail slide-over ── */
+function OrderDetailPanel({ order, couriers, onAssign, onClose }) {
+  const c = order.courier ? courierById(order.courier) : null;
+  const st = ORDER_STATUS[order.status];
+  const doneStatuses = {
+    unassigned:['placed'],
+    assigned:['placed','confirmed','assigned'],
+    toPickup:['placed','confirmed','assigned'],
+    atPickup:['placed','confirmed','assigned','atPickup'],
+    toDropoff:['placed','confirmed','assigned','atPickup','toDropoff'],
+    delivered:['placed','confirmed','assigned','atPickup','toDropoff','delivered'],
+  };
+  const done = doneStatuses[order.status] || ['placed'];
+  const timeline = [
+    { key:'placed',   label:'הוזמן',           time:'13:40' },
+    { key:'confirmed',label:'אושר במסעדה',     time:'13:42' },
+    { key:'assigned', label:'שויך שליח',        time: order.courier ? '13:44' : null },
+    { key:'atPickup', label:'נאסף מהמסעדה',    time: done.includes('atPickup') ? '13:58' : null },
+    { key:'toDropoff',label:'בדרך ללקוח',      time: done.includes('toDropoff') ? '14:10' : null },
+    { key:'delivered',label:'נמסר ללקוח',       time: order.status === 'delivered' ? '14:22' : null },
+  ];
+  return (
+    <>
+      <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.4)', zIndex:50 }} />
+      <div style={{ position:'fixed', top:0, bottom:0, right:0, width:380, background:'var(--paper-2)',
+        boxShadow:'-24px 0 64px rgba(0,0,0,.45)', zIndex:51, display:'flex', flexDirection:'column',
+        animation:'slideInRight .3s cubic-bezier(.2,.8,.2,1)' }}>
+        {/* header */}
+        <div style={{ padding:'20px 22px 16px', borderBottom:'1px solid var(--line)',
+          display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={onClose} style={{ all:'unset', cursor:'pointer', width:34, height:34,
+            borderRadius:10, background:'var(--paper)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name="chev-left" size={18} stroke="var(--ink-2)" style={{ transform:'scaleX(-1)' }} />
+          </button>
+          <div style={{ flex:1 }}>
+            <div className="num" style={{ fontSize:17, fontWeight:900 }}>הזמנה #{order.id}</div>
+            <div style={{ fontSize:12.5, color:'var(--ink-4)', fontWeight:600, marginTop:1 }}>{order.rest}</div>
+          </div>
+          <StatusBadge tone={st.tone}>{st.he}</StatusBadge>
+        </div>
+        {/* body */}
+        <div className="hsb" style={{ flex:1, overflowY:'auto', padding:'20px 22px 28px' }}>
+          {/* customer */}
+          <div style={{ fontSize:11.5, fontWeight:800, color:'var(--ink-4)', letterSpacing:'.05em', marginBottom:8 }}>לקוח ומסירה</div>
+          {[
+            { icon:'pin',  v:`${order.cust} · ${order.area}` },
+            { icon:'card', v:`₪${order.total} · שולם באשראי` },
+          ].map((r,i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0',
+              borderBottom:'1px solid var(--line)' }}>
+              <Icon name={r.icon} size={16} stroke="var(--ink-4)" sw={2} />
+              <span style={{ fontSize:13.5, fontWeight:600, color:'var(--ink-3)' }}>{r.v}</span>
+            </div>
+          ))}
+          {/* courier */}
+          <div style={{ fontSize:11.5, fontWeight:800, color:'var(--ink-4)', letterSpacing:'.05em', margin:'18px 0 8px' }}>שליח</div>
+          {c ? (
+            <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--paper)', borderRadius:13, padding:'11px 13px' }}>
+              <Avatar initials={c.initials} size={34} ring={cStatus[c.status].tone === 'ok' ? 'var(--ok)' : 'var(--gold)'} />
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:800 }}>{c.name}</div>
+                <div style={{ fontSize:12, color:'var(--ink-4)', fontWeight:600 }}>⭐ {c.rating} · {c.vehicle}</div>
+              </div>
+              <StatusBadge tone={cStatus[c.status].tone}>{cStatus[c.status].he}</StatusBadge>
+            </div>
+          ) : (
+            <button className="btn btn-primary"
+              onClick={() => { onAssign(order.id, couriers.find(x => x.status === 'idle')?.id); onClose(); }}
+              style={{ width:'100%', height:42, borderRadius:12, fontSize:14 }}>
+              <Icon name="motorbike" size={17} stroke="var(--ink)" sw={2} /> שייך שליח זמין
+            </button>
+          )}
+          {/* timeline */}
+          <div style={{ fontSize:11.5, fontWeight:800, color:'var(--ink-4)', letterSpacing:'.05em', margin:'18px 0 12px' }}>מעקב הזמנה</div>
+          <div>
+            {timeline.map((t, i) => {
+              const isDone = done.includes(t.key);
+              return (
+                <div key={t.key} style={{ display:'flex', alignItems:'flex-start', gap:12,
+                  paddingBottom: i < timeline.length-1 ? 14 : 0 }}>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', flex:'0 0 auto' }}>
+                    <div style={{ width:24, height:24, borderRadius:99,
+                      background: isDone ? 'var(--ok)' : 'var(--paper)',
+                      border: isDone ? 'none' : '2px solid var(--line-2)',
+                      display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      {isDone && <Icon name="check" size={13} stroke="#fff" sw={2.5} />}
+                    </div>
+                    {i < timeline.length-1 && (
+                      <div style={{ width:2, flex:1, minHeight:12, marginTop:3,
+                        background: isDone ? 'var(--ok)' : 'var(--line-2)' }} />
+                    )}
+                  </div>
+                  <div style={{ flex:1, paddingTop:2 }}>
+                    <div style={{ fontSize:13.5, fontWeight:700, color: isDone ? 'var(--ink)' : 'var(--ink-4)' }}>{t.label}</div>
+                    {t.time && <div style={{ fontSize:12, color:'var(--ink-4)', fontWeight:600, marginTop:1 }}>{t.time}</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 /* ===================== ORDERS TABLE ===================== */
 function OrdersScreen({ orders, couriers, onAssign }) {
   const [q, setQ] = React.useState('');
   const [filter, setFilter] = React.useState('all');
+  const [detailId, setDetailId] = React.useState(null);
+  const detailOrder = orders.find(o => o.id === detailId);
 
   const filters = [
     { id: 'all', he: 'הכל' },
@@ -2090,7 +2249,7 @@ function OrdersScreen({ orders, couriers, onAssign }) {
                   {o.status === 'unassigned'
                     ? <button className="btn btn-primary" onClick={() => onAssign(o.id, couriers.find(x => x.status === 'idle')?.id)}
                         style={{ height: 34, borderRadius: 9, padding: '0 14px', fontSize: 13 }}>שייך</button>
-                    : <button style={{ all: 'unset', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'var(--gold-deep)' }}>פרטים ›</button>}
+                    : <button onClick={() => setDetailId(o.id)} style={{ all: 'unset', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'var(--gold-deep)' }}>פרטים ›</button>}
                 </span>
               </div>
             );
@@ -2098,6 +2257,7 @@ function OrdersScreen({ orders, couriers, onAssign }) {
           {list.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-4)', fontWeight: 600 }}>אין הזמנות בקטגוריה זו</div>}
         </div>
       </div>
+      {detailOrder && <OrderDetailPanel order={detailOrder} couriers={couriers} onAssign={onAssign} onClose={() => setDetailId(null)} />}
     </div>
   );
 }
@@ -2105,17 +2265,30 @@ function OrdersScreen({ orders, couriers, onAssign }) {
 /* ===================== COURIERS ===================== */
 function CouriersScreen({ couriers }) {
   const [q, setQ] = React.useState('');
+  const [expanded, setExpanded] = React.useState(null);
+  const [sentMsg, setSentMsg] = React.useState(null);
   const list = q.trim() ? couriers.filter(c => (c.name + c.area).includes(q.trim())) : couriers;
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <PageHead title="שליחים" sub={`${couriers.filter(c => c.status !== 'offline').length} מחוברים מתוך ${couriers.length}`}
         right={<SearchBox placeholder="חיפוש שליח" value={q} onChange={setQ} />} />
+      {sentMsg && (
+        <div style={{ position:'fixed', top:18, left:'50%', transform:'translateX(-50%)', zIndex:99,
+          background:'var(--ok)', color:'#fff', borderRadius:12, padding:'11px 20px', fontSize:14, fontWeight:700,
+          boxShadow:'var(--shadow-lg)', display:'flex', alignItems:'center', gap:8, animation:'fadeUp .3s ease' }}>
+          <Icon name="check" size={17} stroke="#fff" sw={3} /> {sentMsg}
+        </div>
+      )}
       <div className="hsb" style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {list.map(c => {
             const st = cStatus[c.status];
+            const isExp = expanded === c.id;
             return (
-              <div key={c.id} style={{ background: 'var(--paper)', borderRadius: 18, padding: 18, boxShadow: 'var(--shadow-sm)' }}>
+              <div key={c.id} onClick={() => setExpanded(isExp ? null : c.id)}
+                style={{ background: 'var(--paper)', borderRadius: 18, padding: 18, boxShadow: 'var(--shadow-sm)',
+                  cursor:'pointer', transition:'box-shadow .18s',
+                  boxShadow: isExp ? 'inset 0 0 0 2px var(--gold-soft), var(--shadow-md)' : 'var(--shadow-sm)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
                   <Avatar initials={c.initials} size={50} ring={c.status === 'idle' ? 'var(--ok)' : (c.status === 'busy' ? 'var(--gold)' : 'var(--line-2)')} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -2132,6 +2305,25 @@ function CouriersScreen({ couriers }) {
                   <span style={{ width: 1, background: 'var(--line)', margin: '8px 0' }} />
                   <Mini label="הזמנה נוכחית" value={c.order ? '#' + c.order : '—'} />
                 </div>
+                {isExp && (
+                  <div style={{ marginTop:14, display:'flex', gap:9, animation:'fadeUp .25s ease' }}
+                       onClick={e => e.stopPropagation()}>
+                    <button className="btn btn-primary" onClick={() => { setSentMsg(`הודעה נשלחה ל${c.name}`); setTimeout(()=>setSentMsg(null),2500); }}
+                      style={{ flex:1, height:38, borderRadius:11, fontSize:13 }}>
+                      <Icon name="edit" size={15} stroke="var(--ink)" sw={2} /> הודעה
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => { setSentMsg(`מסלול נפתח עבור ${c.name}`); setTimeout(()=>setSentMsg(null),2500); }}
+                      style={{ flex:1, height:38, borderRadius:11, fontSize:13 }}>
+                      <Icon name="pin" size={15} stroke="var(--ink-2)" sw={2} /> מסלול
+                    </button>
+                    {c.status !== 'offline' && (
+                      <button className="btn btn-ghost" onClick={() => { setSentMsg(`שיחה יזומה עם ${c.name}`); setTimeout(()=>setSentMsg(null),2500); }}
+                        style={{ width:38, height:38, borderRadius:11, padding:0 }}>
+                        <Icon name="phone" size={16} stroke="var(--ink-2)" sw={2} />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

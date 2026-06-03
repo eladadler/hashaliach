@@ -1577,13 +1577,137 @@ Object.assign(window, { Icon, Rating, Pill, RestaurantCard, FavDot, ils, Photo }
   <script type="text/babel">
 // home.jsx — Home Feed (3 layout variants)
 
+/* ── shared bottom-sheet ── */
+function BottomSheet({ title, onClose, children }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.5)', zIndex:80 }} />
+      <div style={{ position:'fixed', bottom:0, insetInlineStart:0, insetInlineEnd:0, zIndex:81,
+        background:'var(--paper)', borderRadius:'24px 24px 0 0', padding:'0 20px',
+        paddingBottom:'max(28px, calc(env(safe-area-inset-bottom,0px) + 16px))',
+        animation:'sheetUp .32s cubic-bezier(.2,.8,.2,1)' }}>
+        <div style={{ width:40, height:5, borderRadius:99, background:'var(--line-2)', margin:'14px auto 18px' }} />
+        {title && <div style={{ fontSize:18, fontWeight:900, marginBottom:18, letterSpacing:'-.01em' }}>{title}</div>}
+        {children}
+      </div>
+    </>
+  );
+}
+
+/* ── address picker ── */
+const SAVED_ADDRESSES = [
+  { id:'home',  icon:'pin',   label:'בית',       sub:'רחוב יפו 42, ירושלים' },
+  { id:'work',  icon:'bag',   label:'עבודה',      sub:'רחוב יצחק שדה 10, ירושלים' },
+  { id:'mom',   icon:'heart', label:'אצל אמא',   sub:'רחוב בן יהודה 22, ירושלים' },
+];
+function AddressSheet({ current, onSelect, onClose }) {
+  return (
+    <BottomSheet title="כתובת משלוח" onClose={onClose}>
+      {SAVED_ADDRESSES.map(a => (
+        <div key={a.id} onClick={() => onSelect(a.sub)} style={{ display:'flex', alignItems:'center', gap:12,
+          padding:'13px 0', borderBottom:'1px solid var(--line)', cursor:'pointer' }}>
+          <span style={{ width:40, height:40, borderRadius:12, background:'var(--gold-tint)',
+            display:'flex', alignItems:'center', justifyContent:'center', flex:'0 0 auto' }}>
+            <Icon name={a.icon} size={20} stroke="var(--gold-deep)" sw={2} />
+          </span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:15.5, fontWeight:700 }}>{a.label}</div>
+            <div style={{ fontSize:13, color:'var(--ink-4)', fontWeight:600, marginTop:2 }}>{a.sub}</div>
+          </div>
+          {a.sub === current && <Icon name="check" size={18} stroke="var(--gold-deep)" sw={2.5} />}
+        </div>
+      ))}
+      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 0', cursor:'pointer' }}
+           onClick={onClose}>
+        <span style={{ width:40, height:40, borderRadius:12, border:'2px dashed var(--line-2)',
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <Icon name="plus" size={20} stroke="var(--ink-3)" />
+        </span>
+        <span style={{ fontSize:15.5, fontWeight:700, color:'var(--ink-3)' }}>הוסף כתובת חדשה</span>
+      </div>
+    </BottomSheet>
+  );
+}
+
+/* ── filter / sort sheet ── */
+function FilterSheet({ sort, onApply, onClose }) {
+  const [s, setS] = React.useState(sort);
+  const [maxTime, setMaxTime] = React.useState(45);
+  const [freeOnly, setFreeOnly] = React.useState(false);
+  const sorts = [
+    { id:'popular', label:'🔥 מומלצים' },
+    { id:'fast',    label:'⚡ הכי מהיר' },
+    { id:'rating',  label:'⭐ דירוג גבוה' },
+    { id:'near',    label:'📍 הכי קרוב' },
+  ];
+  return (
+    <BottomSheet title="מיון וסינון" onClose={onClose}>
+      <div style={{ fontSize:13, fontWeight:700, color:'var(--ink-4)', marginBottom:10 }}>מיון לפי</div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:9, marginBottom:22 }}>
+        {sorts.map(o => (
+          <button key={o.id} onClick={() => setS(o.id)}
+            className={'chip' + (s === o.id ? ' chip-active' : '')}>{o.label}</button>
+        ))}
+      </div>
+      <div style={{ fontSize:13, fontWeight:700, color:'var(--ink-4)', marginBottom:10 }}>זמן משלוח מרבי</div>
+      <div style={{ display:'flex', gap:9, marginBottom:22 }}>
+        {[30,45,60].map(t => (
+          <button key={t} onClick={() => setMaxTime(t)}
+            className={'chip' + (maxTime === t ? ' chip-active' : '')}>עד {t} דק׳</button>
+        ))}
+      </div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24,
+        padding:'14px 0', borderTop:'1px solid var(--line)' }}>
+        <span style={{ fontSize:15.5, fontWeight:700 }}>משלוח חינם בלבד</span>
+        <div onClick={() => setFreeOnly(f => !f)} style={{ width:50, height:28, borderRadius:99,
+          background: freeOnly ? 'var(--gold)' : 'var(--line-2)', position:'relative', cursor:'pointer', transition:'background .2s' }}>
+          <div style={{ position:'absolute', top:3,
+            ...(freeOnly ? { insetInlineEnd:3 } : { insetInlineStart:3 }),
+            width:22, height:22, borderRadius:99, background:'#fff', boxShadow:'var(--shadow-sm)', transition:'all .2s' }} />
+        </div>
+      </div>
+      <button className="btn btn-primary" onClick={() => onApply(s)}
+        style={{ width:'100%', height:52, borderRadius:16, fontSize:16 }}>החל סינון</button>
+    </BottomSheet>
+  );
+}
+
+/* ── promo strip ── */
+const PROMOS = [
+  { id:1, emoji:'🍕', label:'20% הנחה', sub:'פיצה רוממה · עד 14:00', color:'#8B3A35' },
+  { id:2, emoji:'🛵', label:'משלוח חינם', sub:'בהזמנה מעל ₪80',        color:'#2E6B4A' },
+  { id:3, emoji:'🥯', label:'2+1 חינם',  sub:'בייגלה ירושלמי',         color:'#1E4F8A' },
+];
+function PromoStrip() {
+  return (
+    <div className="hsb" style={{ display:'flex', gap:12, overflowX:'auto', padding:'16px 18px 6px' }}>
+      {PROMOS.map((p,i) => (
+        <div key={p.id} style={{ flex:'0 0 auto', width:156, borderRadius:16,
+          background:`linear-gradient(135deg,${p.color}ee,${p.color}99)`,
+          padding:'12px 14px', cursor:'pointer', animation:`fadeUp ${.3+i*.08}s ease` }}>
+          <div style={{ fontSize:26, marginBottom:5 }}>{p.emoji}</div>
+          <div style={{ fontSize:14, fontWeight:900, color:'#fff', lineHeight:1.15 }}>{p.label}</div>
+          <div style={{ fontSize:11.5, fontWeight:600, color:'rgba(255,255,255,.72)', marginTop:3 }}>{p.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── home screen ── */
 function HomeScreen({ onOpenRestaurant, layout = 'magazine', cardStyle = 'overlay', radius = 20 }) {
   const [cat, setCat] = React.useState('all');
   const [q, setQ] = React.useState('');
+  const [addr, setAddr] = React.useState('רחוב יפו 42, ירושלים');
+  const [showAddr, setShowAddr] = React.useState(false);
+  const [showFilter, setShowFilter] = React.useState(false);
+  const [sort, setSort] = React.useState('popular');
 
   let list = RESTAURANTS;
   if (cat !== 'all') list = list.filter(r => r.cat === cat);
   if (q.trim()) list = list.filter(r => (r.name + r.cuisine.join('')).includes(q.trim()));
+  if (sort === 'rating') list = [...list].sort((a,b) => b.rating - a.rating);
+  if (sort === 'fast')   list = [...list].sort((a,b) => parseInt(a.time) - parseInt(b.time));
 
   return (
     <div className="screen">
@@ -1592,9 +1716,9 @@ function HomeScreen({ onOpenRestaurant, layout = 'magazine', cardStyle = 'overla
         <div style={{ padding: '6px 18px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-4)', letterSpacing: '.02em' }}>משלוח אל</div>
-            <button style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+            <button onClick={() => setShowAddr(true)} style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
               <Icon name="pin" size={18} stroke="var(--gold-deep)" />
-              <span style={{ fontSize: 17, fontWeight: 800 }}>רחוב יפו 42, ירושלים</span>
+              <span style={{ fontSize: 17, fontWeight: 800 }}>{addr}</span>
               <Icon name="chev-left" size={16} stroke="var(--ink-3)" style={{ transform: 'rotate(-90deg)' }} />
             </button>
           </div>
@@ -1608,8 +1732,11 @@ function HomeScreen({ onOpenRestaurant, layout = 'magazine', cardStyle = 'overla
             <Icon name="search" size={20} stroke="var(--ink-3)" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="חיפוש מסעדה או מטבח"
               style={{ all: 'unset', flex: 1, fontFamily: 'inherit', fontSize: 15.5, fontWeight: 500, color: 'var(--ink)' }} />
-            <button style={{ all: 'unset', cursor: 'pointer', display: 'flex' }}>
-              <Icon name="sliders" size={20} stroke="var(--ink-2)" />
+            <button onClick={() => setShowFilter(true)} style={{ all: 'unset', cursor: 'pointer', display: 'flex',
+              position:'relative' }}>
+              <Icon name="sliders" size={20} stroke={sort !== 'popular' ? 'var(--gold-deep)' : 'var(--ink-2)'} />
+              {sort !== 'popular' && <span style={{ position:'absolute', top:-2, insetInlineEnd:-2, width:8, height:8,
+                borderRadius:99, background:'var(--gold)', border:'2px solid var(--paper-3)' }} />}
             </button>
           </div>
         </div>
@@ -1625,17 +1752,26 @@ function HomeScreen({ onOpenRestaurant, layout = 'magazine', cardStyle = 'overla
       </div>
 
       {/* ===== Feed ===== */}
-      <div className="screen-scroll" style={{ padding: '18px 18px 96px' }}>
-        {q.trim() === '' && cat === 'all' && (
-          <SectionHead title="מומלצים בירושלים" sub="הכי מוזמנים השבוע" />
-        )}
+      <div className="screen-scroll" style={{ padding: '0 0 96px' }}>
+        {q.trim() === '' && cat === 'all' && <PromoStrip />}
 
-        {list.length === 0 ? (
-          <Empty />
-        ) : (
-          <Feed list={list} layout={layout} cardStyle={cardStyle} radius={radius} onOpen={onOpenRestaurant} />
-        )}
+        <div style={{ padding:'14px 18px 0' }}>
+          {q.trim() === '' && cat === 'all' && (
+            <SectionHead title="מומלצים בירושלים" sub="הכי מוזמנים השבוע" />
+          )}
+        </div>
+
+        <div style={{ padding:'0 18px' }}>
+          {list.length === 0 ? (
+            <Empty />
+          ) : (
+            <Feed list={list} layout={layout} cardStyle={cardStyle} radius={radius} onOpen={onOpenRestaurant} />
+          )}
+        </div>
       </div>
+
+      {showAddr && <AddressSheet current={addr} onSelect={(a) => { setAddr(a); setShowAddr(false); }} onClose={() => setShowAddr(false)} />}
+      {showFilter && <FilterSheet sort={sort} onApply={(s) => { setSort(s); setShowFilter(false); }} onClose={() => setShowFilter(false)} />}
     </div>
   );
 }
