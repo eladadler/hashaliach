@@ -1377,6 +1377,18 @@ const RESTAURANTS = [
 
 const byId = (id) => RESTAURANTS.find(r => r.id === id);
 
+// Merge user-created restaurants from business app (via localStorage)
+(function() {
+  try {
+    var bizList = JSON.parse(localStorage.getItem('hashaliach_biz_restaurants') || '[]');
+    bizList.forEach(function(r) {
+      if (!RESTAURANTS.find(function(x) { return x.id === r.id; })) {
+        RESTAURANTS.push(r);
+      }
+    });
+  } catch(e) {}
+})();
+
 Object.assign(window, { CATEGORIES, RESTAURANTS, byId, pic });
 
   </script>

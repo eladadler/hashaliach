@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>השליח · WaVi — בית העסק</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+  <script>
+    (function () {
+      function sync() { document.documentElement.classList.toggle('no-anim', document.hidden); }
+      document.addEventListener('visibilitychange', sync); sync();
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --gold:#C9A24B; --gold-bright:#DCBB63; --gold-deep:#A9842F; --gold-soft:rgba(201,162,75,.22); --gold-tint:rgba(201,162,75,.10);
+      --ink:#17140D; --ink-2:#221E16; --ink-3:#504840; --ink-4:#837C6D;
+      --paper:#2A251C; --paper-2:#231F17; --paper-3:#1E1B13;
+      --line:rgba(220,187,99,.12); --line-2:rgba(255,255,255,.10);
+      --txt:#F5F1E8; --shadow-sm:0 2px 12px rgba(0,0,0,.22); --shadow-md:0 6px 24px rgba(0,0,0,.32); --shadow-lg:0 16px 48px rgba(0,0,0,.48); --shadow-gold:0 4px 20px rgba(169,132,47,.4);
+      --ok:#2E7D56; --bad:#B84040;
+    }
+    html.no-anim *, html.no-anim *::before, html.no-anim *::after { animation: none !important; }
+    html, body { margin:0; background:#1A160F; font-family:'Heebo',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:var(--txt); }
+    .screen { position:absolute; inset:0; direction:rtl; display:flex; flex-direction:column; background:var(--paper-2); overflow:hidden; }
+    .screen-scroll { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .screen-scroll::-webkit-scrollbar { display:none; }
+    .num { font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; }
+    .btn { border:none; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:700; transition:transform .12s, box-shadow .2s, background .2s; -webkit-tap-highlight-color:transparent; }
+    .btn:active { transform:scale(.97); }
+    .btn-primary { background:linear-gradient(180deg,var(--gold-bright),var(--gold)); color:var(--ink); box-shadow:var(--shadow-gold); }
+    .btn-ghost { background:var(--paper); color:var(--txt); box-shadow:inset 0 0 0 1.5px var(--line-2); }
+    .btn-danger { background:var(--bad); color:#fff; }
+    .ph { position:relative; background:repeating-linear-gradient(135deg,rgba(169,132,47,.07) 0 10px,rgba(169,132,47,.025) 10px 20px),var(--gold-tint); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .ph::after { content:attr(data-label); font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.04em; color:var(--gold-deep); opacity:.65; text-align:center; padding:0 10px; line-height:1.4; }
+    .ph > .ph-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .chip { flex:0 0 auto; cursor:pointer; -webkit-tap-highlight-color:transparent; display:inline-flex; align-items:center; gap:6px; padding:9px 15px; border-radius:999px; font-size:14px; font-weight:600; white-space:nowrap; background:var(--paper); color:var(--txt); box-shadow:inset 0 0 0 1.5px var(--line-2); transition:all .18s; }
+    .chip-active { background:var(--gold); color:var(--ink); box-shadow:none; }
+    .hsb { scrollbar-width:none; }
+    .hsb::-webkit-scrollbar { display:none; }
+    input, textarea { background:none; border:none; outline:none; font-family:inherit; color:var(--txt); }
+    input::placeholder, textarea::placeholder { color:var(--ink-4); }
+    @keyframes fadeUp { from{transform:translateY(10px)} to{transform:translateY(0)} }
+    @keyframes scaleIn { from{transform:scale(.96)} to{transform:scale(1)} }
+    @keyframes sheetUp { from{transform:translateY(30px)} to{transform:translateY(0)} }
+    @keyframes pushFwd { from{transform:translateX(-20px)} to{transform:translateX(0)} }
+    @keyframes pushBack { from{transform:translateX(20px)} to{transform:translateX(0)} }
+    .app-switch { position:fixed; bottom:18px; left:18px; z-index:99999; display:inline-flex; align-items:center; gap:9px; text-decoration:none; font-family:'Heebo',sans-serif; direction:rtl; background:rgba(23,20,13,.82); color:#F5F1E8; border:1px solid rgba(220,187,99,.35); border-radius:999px; padding:9px 15px 9px 13px; font-size:13.5px; font-weight:800; backdrop-filter:blur(10px); box-shadow:0 8px 26px rgba(0,0,0,.32); transition:transform .18s,border-color .18s; }
+    .app-switch:hover { transform:translateY(-2px); border-color:rgba(220,187,99,.7); }
+    .app-switch svg { width:17px; height:17px; flex:0 0 auto; }
+    /* Desktop phone shell */
+    #root { position:fixed; inset:0; overflow:hidden; transform:translateZ(0); }
+    @media (min-width:500px) {
+      html, body { background:#0B0907; }
+      #root { left:calc(50% - 215px) !important; right:auto !important; width:430px; box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 120px rgba(0,0,0,.9); }
+      .app-switch { left:calc(50% - 215px + 18px) !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <a class="app-switch" href="index.html" title="מרכז הבקרה">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#DCBB63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span>האפליקציות</span>
+  </a>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+  <script type="text/babel">
+// ── shared icons ──────────────────────────────────────────────
+const { useState, useEffect, useRef, useCallback } = React;
+
+function Icon({ name, size=20, stroke='currentColor', sw=2, style }) {
+  const p = { viewBox:'0 0 24 24', fill:'none', stroke, strokeWidth:sw, strokeLinecap:'round', strokeLinejoin:'round', width:size, height:size, style };
+  switch(name) {
+    case 'home':      return <svg {...p}><path d="M4 11.5L12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>;
+    case 'store':     return <svg {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>;
+    case 'menu-book': return <svg {...p}><path d="M4 6h16M4 10h16M4 14h10M4 18h6"/></svg>;
+    case 'plus':      return <svg {...p}><path d="M12 5v14M5 12h14"/></svg>;
+    case 'edit':      return <svg {...p}><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13 6l4 4"/></svg>;
+    case 'trash':     return <svg {...p}><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>;
+    case 'check':     return <svg {...p}><path d="M5 12.5l5 5 9-11"/></svg>;
+    case 'chev-left': return <svg {...p}><path d="M15 5l-7 7 7 7"/></svg>;
+    case 'chev-down': return <svg {...p}><path d="M6 9l6 6 6-6"/></svg>;
+    case 'pin':       return <svg {...p}><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>;
+    case 'clock':     return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>;
+    case 'bag':       return <svg {...p}><path d="M6 8h12l-1 12H7z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>;
+    case 'star':      return <svg {...p} fill={stroke} stroke="none"><path d="M12 3.2l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.9 6.9 18.9 8 13.2 3.7 9.2l5.8-.7z"/></svg>;
+    case 'photo':     return <svg {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>;
+    case 'orders':    return <svg {...p}><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>;
+    case 'chart':     return <svg {...p}><path d="M4 20V10l4-4 4 4 4-6 4 2v14"/></svg>;
+    case 'settings':  return <svg {...p}><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>;
+    case 'user':      return <svg {...p}><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>;
+    case 'back':      return <svg {...p}><path d="M9 5l7 7-7 7"/></svg>;
+    case 'ils':       return <svg {...p}><path d="M7 18V7a2 2 0 0 1 2-2h2M17 6v11a2 2 0 0 1-2 2h-2"/></svg>;
+    case 'eye':       return <svg {...p}><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>;
+    default:          return <svg {...p}><circle cx="12" cy="12" r="9"/></svg>;
+  }
+}
+
+function Photo({ src, label, style, radius=0, children }) {
+  const [err, setErr] = useState(false);
+  if (!src || err) return <div className="ph" data-label={label||''} style={{ borderRadius:radius, ...style }}>{children}</div>;
+  return (
+    <div className="ph" data-label="" style={{ borderRadius:radius, ...style }}>
+      <img className="ph-img" src={src} alt={label||''} onError={() => setErr(true)} />
+      {children}
+    </div>
+  );
+}
+
+const ils = (n) => '₪' + Number(n).toLocaleString('he-IL');
+
+function BottomSheet({ title, onClose, children }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:80 }} />
+      <div style={{ position:'fixed',bottom:0,insetInlineStart:0,insetInlineEnd:0,zIndex:81,
+        background:'var(--paper)',borderRadius:'24px 24px 0 0',padding:'0 20px',
+        paddingBottom:'max(28px,calc(env(safe-area-inset-bottom,0px) + 16px))',
+        animation:'sheetUp .3s cubic-bezier(.2,.8,.2,1)',maxHeight:'85vh',overflowY:'auto' }}>
+        <div style={{ width:40,height:5,borderRadius:99,background:'var(--line-2)',margin:'14px auto 18px' }} />
+        {title && <div style={{ fontSize:18,fontWeight:900,marginBottom:18 }}>{title}</div>}
+        {children}
+      </div>
+    </>
+  );
+}
+
+function FieldBox({ label, children, style }) {
+  return (
+    <div style={{ marginBottom:16, ...style }}>
+      <div style={{ fontSize:12.5,fontWeight:700,color:'var(--ink-4)',marginBottom:6,letterSpacing:'.02em' }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+function TextInput({ value, onChange, placeholder, multiline, rows=3, type='text', ...rest }) {
+  const s = { width:'100%',background:'var(--paper)',border:'none',borderRadius:14,
+    padding:'13px 14px',fontSize:15,fontWeight:500,color:'var(--txt)',
+    boxShadow:'inset 0 0 0 1.5px var(--line-2)',fontFamily:'inherit',
+    outline:'none',resize:'none', display:'block' };
+  return multiline
+    ? <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows} style={s} {...rest} />
+    : <input type={type} value={value} onChange={onChange} placeholder={placeholder} style={s} {...rest} />;
+}
+
+Object.assign(window, { Icon, Photo, ils, BottomSheet, FieldBox, TextInput });
+  </script>
+
+  <script type="text/babel">
+// ── data + storage ────────────────────────────────────────────
+const BIZ_KEY = 'hashaliach_biz_restaurants';
+
+const _IMG = {
+  shawarma:'https://images.unsplash.com/photo-1529006557810-274b9b2fc783',
+  pizza:'https://images.unsplash.com/photo-1513104890138-7c749659a591',
+  burger:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
+  sushi:'https://images.unsplash.com/photo-1579871494447-9811cf80d66c',
+  coffee:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+  hummus:'https://plus.unsplash.com/premium_photo-1700084621410-941e5aa5d1e4',
+  salad:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
+  fries:'https://images.unsplash.com/photo-1573080496219-bb080dd4f877',
+  croissant:'https://images.unsplash.com/photo-1555507036-ab1f4038808a',
+  breakfast:'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666',
+};
+const _Q = '?fm=jpg&q=62&w=900&auto=format&fit=crop';
+const bizPhoto = (k) => _IMG[k] ? _IMG[k] + _Q : null;
+
+const BIZ_CATEGORIES = [
+  { id:'shawarma', label:'שווארמה',    cat:'shawarma', imgKey:'shawarma' },
+  { id:'pizza',    label:'פיצה',       cat:'pizza',    imgKey:'pizza' },
+  { id:'burger',   label:'המבורגר',    cat:'meat',     imgKey:'burger' },
+  { id:'sushi',    label:'סושי',       cat:'asian',    imgKey:'sushi' },
+  { id:'coffee',   label:'בית קפה',    cat:'cafe',     imgKey:'coffee' },
+  { id:'hummus',   label:'חומוס',      cat:'shawarma', imgKey:'hummus' },
+  { id:'salad',    label:'סלט ובריא',  cat:'veggie',   imgKey:'salad' },
+  { id:'bakery',   label:'מאפייה',     cat:'cafe',     imgKey:'croissant' },
+  { id:'breakfast',label:'ארוחת בוקר', cat:'cafe',     imgKey:'breakfast' },
+];
+
+const ITEM_CATEGORIES = ['מנות עיקריות','מנות ראשונות','פיצות','המבורגרים','סלטים','תוספות','שתייה','קינוחים'];
+
+function loadBiz() {
+  try { return JSON.parse(localStorage.getItem(BIZ_KEY) || '[]'); } catch { return []; }
+}
+function saveBiz(list) {
+  localStorage.setItem(BIZ_KEY, JSON.stringify(list));
+}
+function genId() { return 'biz_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+Object.assign(window, { BIZ_KEY, bizPhoto, BIZ_CATEGORIES, ITEM_CATEGORIES, loadBiz, saveBiz, genId });
+  </script>
+
+  <script type="text/babel">
+// ── screens ───────────────────────────────────────────────────
+
+/* MY BUSINESSES */
+function MyBusinessesScreen({ onOpen, onCreateNew }) {
+  const [businesses, setBusinesses] = useState(loadBiz);
+  useEffect(() => {
+    const reload = () => setBusinesses(loadBiz());
+    window.addEventListener('biz-updated', reload);
+    return () => window.removeEventListener('biz-updated', reload);
+  }, []);
+
+  if (businesses.length === 0) {
+    return (
+      <div className="screen" style={{ display:'flex', flexDirection:'column' }}>
+        <div style={{ background:'var(--paper)', paddingTop:'max(54px,calc(env(safe-area-inset-top,0px) + 10px))',
+          paddingBottom:16, boxShadow:'0 2px 12px rgba(0,0,0,.22)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, padding:'6px 18px 0' }}>
+            <div style={{ width:40, height:40, borderRadius:12,
+              background:'linear-gradient(160deg,var(--gold-bright),var(--gold-deep))',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:20, fontWeight:900, color:'var(--ink)' }}>ע</div>
+            <div>
+              <div style={{ fontSize:20, fontWeight:900 }}>הפורטל שלי</div>
+              <div style={{ fontSize:12.5, color:'var(--ink-4)', fontWeight:600 }}>ניהול העסק שלך</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          padding:'0 32px 80px', textAlign:'center' }}>
+          <div style={{ width:96, height:96, borderRadius:28, background:'var(--gold-tint)',
+            display:'flex', alignItems:'center', justifyContent:'center', marginBottom:22 }}>
+            <Icon name="store" size={46} stroke="var(--gold-deep)" sw={1.5} />
+          </div>
+          <div style={{ fontSize:22, fontWeight:900, marginBottom:8 }}>אין עסק רשום עדיין</div>
+          <div style={{ fontSize:15, color:'var(--ink-4)', fontWeight:600, lineHeight:1.55, marginBottom:32 }}>
+            הוסף את העסק שלך לפלטפורמת השליח ותתחיל לקבל הזמנות מלקוחות בירושלים
+          </div>
+          <button className="btn btn-primary" onClick={onCreateNew}
+            style={{ height:56, borderRadius:18, fontSize:17, padding:'0 36px' }}>
+            <Icon name="plus" size={22} stroke="var(--ink)" sw={2.5} /> הקם עסק חדש
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screen">
+      <div style={{ background:'var(--paper)', paddingTop:'max(54px,calc(env(safe-area-inset-top,0px) + 10px))',
+        paddingBottom:16, boxShadow:'0 2px 12px rgba(0,0,0,.22)', zIndex:3 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 18px 0' }}>
+          <div>
+            <div style={{ fontSize:26, fontWeight:900 }}>העסקים שלי</div>
+            <div style={{ fontSize:13, color:'var(--ink-4)', fontWeight:600, marginTop:2 }}>{businesses.length} עסקים פעילים</div>
+          </div>
+          <button className="btn btn-primary" onClick={onCreateNew}
+            style={{ height:42, borderRadius:14, fontSize:13.5, padding:'0 16px' }}>
+            <Icon name="plus" size={18} stroke="var(--ink)" sw={2.5} />הוסף
+          </button>
+        </div>
+      </div>
+      <div className="screen-scroll" style={{ padding:'16px 18px 100px' }}>
+        {businesses.map((b, i) => {
+          const totalItems = b.menu.reduce((s, sec) => s + sec.items.length, 0);
+          return (
+            <div key={b.id} onClick={() => onOpen(b.id)}
+              style={{ background:'var(--paper)', borderRadius:20, marginBottom:14,
+                boxShadow:'var(--shadow-sm)', overflow:'hidden', cursor:'pointer',
+                animation:'fadeUp .35s ease' }}>
+              <div style={{ position:'relative' }}>
+                <Photo src={b.photo} label={b.name} style={{ width:'100%', height:140 }} />
+                <div style={{ position:'absolute', inset:0,
+                  background:'linear-gradient(180deg,transparent 40%,rgba(0,0,0,.7))' }} />
+                <div style={{ position:'absolute', bottom:12, insetInlineStart:14, insetInlineEnd:14,
+                  display:'flex', alignItems:'flex-end', justifyContent:'space-between' }}>
+                  <div>
+                    <div style={{ fontSize:19, fontWeight:900, color:'#fff' }}>{b.name}</div>
+                    <div style={{ fontSize:12.5, color:'rgba(255,255,255,.75)', fontWeight:600, marginTop:2 }}>
+                      {b.area} · {b.cuisine.join(' · ')}
+                    </div>
+                  </div>
+                  <span style={{ background:'var(--ok)', color:'#fff', borderRadius:99, padding:'4px 10px',
+                    fontSize:11.5, fontWeight:800 }}>פעיל</span>
+                </div>
+              </div>
+              <div style={{ display:'flex', padding:'14px 16px', gap:0 }}>
+                {[
+                  { label:'מנות בתפריט', value:totalItems },
+                  { label:'הזמנות היום', value: Math.floor(Math.random() * 12 + 2) },
+                  { label:'דירוג', value: b.rating > 0 ? '⭐ '+b.rating : '—' },
+                ].map((s, j) => (
+                  <React.Fragment key={j}>
+                    {j > 0 && <div style={{ width:1, background:'var(--line)', margin:'0 4px' }} />}
+                    <div style={{ flex:1, textAlign:'center', padding:'0 6px' }}>
+                      <div style={{ fontSize:17, fontWeight:900 }}>{s.value}</div>
+                      <div style={{ fontSize:11.5, color:'var(--ink-4)', fontWeight:600, marginTop:2 }}>{s.label}</div>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* CREATE BUSINESS WIZARD */
+function CreateBusinessScreen({ onDone, onBack }) {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    name:'', catId:'pizza', area:'', desc:'',
+    fee:12, minOrder:50, time:'25–35',
+  });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const cat = BIZ_CATEGORIES.find(c => c.id === form.catId) || BIZ_CATEGORIES[0];
+
+  const save = () => {
+    const newBiz = {
+      id: genId(),
+      name: form.name || 'העסק שלי',
+      cuisine: [cat.label],
+      cat: cat.cat,
+      rating: 0, reviews: 0,
+      time: form.time,
+      fee: Number(form.fee),
+      minOrder: Number(form.minOrder),
+      dist: 'זמין',
+      area: form.area || 'ירושלים',
+      hero: form.name || 'עסק חדש',
+      photo: bizPhoto(cat.imgKey),
+      logo: '',
+      desc: form.desc || '',
+      menu: [],
+      isUserCreated: true,
+    };
+    const list = loadBiz();
+    list.push(newBiz);
+    saveBiz(list);
+    window.dispatchEvent(new Event('biz-updated'));
+    onDone(newBiz.id);
+  };
+
+  return (
+    <div className="screen">
+      <div style={{ background:'var(--paper)', paddingTop:'max(54px,calc(env(safe-area-inset-top,0px) + 10px))',
+        paddingBottom:14, boxShadow:'0 2px 12px rgba(0,0,0,.22)', zIndex:3 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'6px 18px 0' }}>
+          <button onClick={onBack} style={{ all:'unset', cursor:'pointer', width:36, height:36, borderRadius:11,
+            background:'var(--paper-3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name="chev-left" size={20} stroke="var(--txt)" />
+          </button>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:20, fontWeight:900 }}>הקמת עסק חדש</div>
+            <div style={{ fontSize:12.5, color:'var(--ink-4)', fontWeight:600 }}>שלב {step} מתוך 2</div>
+          </div>
+        </div>
+        {/* progress bar */}
+        <div style={{ margin:'12px 18px 0', height:4, borderRadius:99, background:'var(--line-2)' }}>
+          <div style={{ height:'100%', borderRadius:99, background:'var(--gold)', width: step === 1 ? '50%' : '100%', transition:'width .3s' }} />
+        </div>
+      </div>
+
+      <div className="screen-scroll" style={{ padding:'22px 20px 100px' }}>
+        {step === 1 ? (
+          <>
+            <FieldBox label="שם העסק">
+              <TextInput value={form.name} onChange={e => set('name', e.target.value)} placeholder="למשל: פיצה רוממה, שווארמה אלי..." />
+            </FieldBox>
+            <FieldBox label="תיאור קצר (אופציונלי)">
+              <TextInput multiline value={form.desc} onChange={e => set('desc', e.target.value)} placeholder="ספר ללקוחות מה מיוחד אצלך..." rows={3} />
+            </FieldBox>
+            <FieldBox label="סוג העסק">
+              <div style={{ display:'flex', flexWrap:'wrap', gap:9 }}>
+                {BIZ_CATEGORIES.map(c => (
+                  <button key={c.id} onClick={() => set('catId', c.id)}
+                    className={'chip' + (form.catId === c.id ? ' chip-active' : '')}>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </FieldBox>
+            {/* preview */}
+            <div style={{ borderRadius:18, overflow:'hidden', boxShadow:'var(--shadow-sm)', marginTop:8 }}>
+              <Photo src={bizPhoto(cat.imgKey)} label={form.name || 'תצוגה מקדימה'}
+                style={{ width:'100%', height:120 }} />
+              <div style={{ background:'var(--paper)', padding:'12px 14px' }}>
+                <div style={{ fontSize:16, fontWeight:800 }}>{form.name || 'שם העסק'}</div>
+                <div style={{ fontSize:12.5, color:'var(--ink-4)', fontWeight:600, marginTop:3 }}>{cat.label} · ירושלים</div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <FieldBox label="אזור / כתובת">
+              <TextInput value={form.area} onChange={e => set('area', e.target.value)} placeholder="למשל: מחנה יהודה, רחוב יפו..." />
+            </FieldBox>
+            <FieldBox label="זמן משלוח משוער">
+              <div style={{ display:'flex', gap:9 }}>
+                {['15–25','20–30','25–35','30–45'].map(t => (
+                  <button key={t} onClick={() => set('time', t)}
+                    className={'chip' + (form.time === t ? ' chip-active' : '')}>{t} ד׳</button>
+                ))}
+              </div>
+            </FieldBox>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <FieldBox label="עמלת משלוח (₪)">
+                <TextInput type="number" value={form.fee} onChange={e => set('fee', e.target.value)} placeholder="12" />
+              </FieldBox>
+              <FieldBox label="מינימום הזמנה (₪)">
+                <TextInput type="number" value={form.minOrder} onChange={e => set('minOrder', e.target.value)} placeholder="50" />
+              </FieldBox>
+            </div>
+            <div style={{ background:'var(--paper)', borderRadius:16, padding:'14px 16px',
+              boxShadow:'var(--shadow-sm)', marginTop:8 }}>
+              <div style={{ display:'flex', gap:16, fontSize:13.5, fontWeight:600, color:'var(--ink-3)' }}>
+                <span><Icon name="clock" size={15} stroke="var(--ink-4)" style={{verticalAlign:-2}} /> {form.time} ד׳</span>
+                <span>משלוח {ils(form.fee || 0)}</span>
+                <span>מינ׳ {ils(form.minOrder || 0)}</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div style={{ position:'absolute', bottom:0, insetInlineStart:0, insetInlineEnd:0,
+        padding:'14px 20px', paddingBottom:'max(24px,calc(env(safe-area-inset-bottom,0px) + 14px))',
+        background:'var(--paper-2)', borderTop:'1px solid var(--line)' }}>
+        {step === 1 ? (
+          <button className="btn btn-primary" onClick={() => { if (form.name.trim()) setStep(2); }}
+            disabled={!form.name.trim()}
+            style={{ width:'100%', height:54, borderRadius:16, fontSize:16.5, opacity: form.name.trim() ? 1 : .45 }}>
+            המשך <Icon name="back" size={20} stroke="var(--ink)" style={{ transform:'scaleX(-1)' }} />
+          </button>
+        ) : (
+          <div style={{ display:'flex', gap:12 }}>
+            <button className="btn btn-ghost" onClick={() => setStep(1)}
+              style={{ height:54, borderRadius:16, fontSize:15, flex:1 }}>
+              <Icon name="chev-left" size={18} stroke="var(--txt)" /> חזרה
+            </button>
+            <button className="btn btn-primary" onClick={save}
+              style={{ height:54, borderRadius:16, fontSize:16.5, flex:2 }}>
+              <Icon name="check" size={20} stroke="var(--ink)" sw={2.5} /> צור עסק
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { MyBusinessesScreen, CreateBusinessScreen });
+  </script>
+
+  <script type="text/babel">
+// ── business dashboard + menu manager ────────────────────────
+
+function BusinessDashboardScreen({ bizId, onManageMenu, onBack, onDelete }) {
+  const [biz, setBiz] = useState(() => loadBiz().find(b => b.id === bizId));
+  useEffect(() => {
+    const reload = () => setBiz(loadBiz().find(b => b.id === bizId));
+    window.addEventListener('biz-updated', reload);
+    return () => window.removeEventListener('biz-updated', reload);
+  }, [bizId]);
+  const [showDelete, setShowDelete] = useState(false);
+
+  if (!biz) return null;
+  const totalItems = biz.menu.reduce((s, sec) => s + sec.items.length, 0);
+  const mockOrders = [
+    { id:'4831', cust:'אורי כהן', total:78, status:'בהכנה' },
+    { id:'4829', cust:'מיכל לוי', total:124, status:'בדרך' },
+    { id:'4824', cust:'דני ברק', total:56, status:'נמסר' },
+  ];
+
+  return (
+    <div className="screen">
+      {/* hero header */}
+      <div style={{ position:'relative', flex:'0 0 auto', height:200 }}>
+        <Photo src={biz.photo} label={biz.name} style={{ position:'absolute', inset:0 }} />
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,0,0,.45) 0,rgba(0,0,0,.7) 100%)' }} />
+        <div style={{ position:'absolute', top:'max(52px,calc(env(safe-area-inset-top,0px) + 8px))',
+          insetInlineStart:16, insetInlineEnd:16, display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={onBack} style={{ all:'unset', cursor:'pointer', width:36, height:36, borderRadius:11,
+            background:'rgba(255,255,255,.15)', backdropFilter:'blur(8px)',
+            display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name="chev-left" size={20} stroke="#fff" />
+          </button>
+          <div style={{ flex:1 }} />
+          <button onClick={() => setShowDelete(true)} style={{ all:'unset', cursor:'pointer', width:36, height:36, borderRadius:11,
+            background:'rgba(255,255,255,.15)', backdropFilter:'blur(8px)',
+            display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name="trash" size={17} stroke="#fff" sw={2} />
+          </button>
+        </div>
+        <div style={{ position:'absolute', bottom:16, insetInlineStart:18 }}>
+          <div style={{ fontSize:24, fontWeight:900, color:'#fff' }}>{biz.name}</div>
+          <div style={{ fontSize:13.5, color:'rgba(255,255,255,.75)', fontWeight:600, marginTop:3 }}>
+            {biz.area} · {biz.cuisine.join(' · ')}
+          </div>
+        </div>
+      </div>
+
+      <div className="screen-scroll" style={{ padding:'18px 18px 110px' }}>
+        {/* stats row */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:18 }}>
+          {[
+            { icon:'bag',      label:'הזמנות היום', value:'8' },
+            { icon:'menu-book',label:'מנות',         value:String(totalItems) },
+            { icon:'star',     label:'דירוג',        value: biz.rating > 0 ? String(biz.rating) : 'חדש' },
+          ].map((s,i) => (
+            <div key={i} style={{ background:'var(--paper)', borderRadius:16, padding:'14px 12px',
+              boxShadow:'var(--shadow-sm)', textAlign:'center' }}>
+              <Icon name={s.icon} size={22} stroke="var(--gold-deep)" sw={1.8} />
+              <div style={{ fontSize:22, fontWeight:900, marginTop:6 }}>{s.value}</div>
+              <div style={{ fontSize:11.5, color:'var(--ink-4)', fontWeight:600, marginTop:2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* manage menu CTA */}
+        <button className="btn btn-primary" onClick={onManageMenu}
+          style={{ width:'100%', height:56, borderRadius:18, fontSize:17, marginBottom:18 }}>
+          <Icon name="menu-book" size={22} stroke="var(--ink)" sw={2} /> ניהול תפריט
+        </button>
+
+        {/* quick info */}
+        <div style={{ background:'var(--paper)', borderRadius:18, padding:'14px 16px',
+          boxShadow:'var(--shadow-sm)', marginBottom:18 }}>
+          <div style={{ fontSize:14, fontWeight:900, marginBottom:12 }}>פרטי המשלוח</div>
+          {[
+            { label:'זמן משלוח', val:`${biz.time} דקות` },
+            { label:'עמלת משלוח', val:ils(biz.fee) },
+            { label:'מינימום הזמנה', val:ils(biz.minOrder) },
+            { label:'אזור',  val:biz.area },
+          ].map((r,i) => (
+            <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0',
+              borderTop: i ? '1px solid var(--line)' : 'none', fontSize:14, fontWeight:600 }}>
+              <span style={{ color:'var(--ink-4)' }}>{r.label}</span>
+              <span style={{ fontWeight:700 }}>{r.val}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* recent orders */}
+        <div style={{ fontSize:16, fontWeight:900, marginBottom:10 }}>הזמנות אחרונות</div>
+        {mockOrders.map(o => (
+          <div key={o.id} style={{ background:'var(--paper)', borderRadius:16, padding:'13px 14px',
+            marginBottom:10, boxShadow:'var(--shadow-sm)', display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:15, fontWeight:800 }}>{o.cust}</div>
+              <div style={{ fontSize:12.5, color:'var(--ink-4)', fontWeight:600, marginTop:2 }}>הזמנה #{o.id}</div>
+            </div>
+            <div className="num" style={{ fontSize:15, fontWeight:800 }}>{ils(o.total)}</div>
+            <span style={{ padding:'5px 11px', borderRadius:99, fontSize:12, fontWeight:800,
+              background: o.status === 'נמסר' ? 'rgba(46,125,86,.2)' : o.status === 'בדרך' ? 'rgba(201,162,75,.2)' : 'rgba(255,255,255,.08)',
+              color: o.status === 'נמסר' ? 'var(--ok)' : o.status === 'בדרך' ? 'var(--gold)' : 'var(--txt)' }}>
+              {o.status}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {showDelete && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', zIndex:80,
+          display:'flex', alignItems:'flex-end' }}>
+          <div style={{ width:'100%', background:'var(--paper)', borderRadius:'24px 24px 0 0',
+            padding:'0 20px', paddingBottom:'max(28px,calc(env(safe-area-inset-bottom,0px) + 16px))',
+            animation:'sheetUp .3s ease' }}>
+            <div style={{ width:40,height:5,borderRadius:99,background:'var(--line-2)',margin:'14px auto 18px' }} />
+            <div style={{ fontSize:18, fontWeight:900, marginBottom:8 }}>מחיקת עסק</div>
+            <div style={{ fontSize:14.5, color:'var(--ink-4)', fontWeight:600, marginBottom:22 }}>
+              האם למחוק את "{biz.name}"? פעולה זו לא ניתנת לביטול.
+            </div>
+            <div style={{ display:'flex', gap:12 }}>
+              <button className="btn btn-ghost" onClick={() => setShowDelete(false)}
+                style={{ flex:1, height:52, borderRadius:16, fontSize:15 }}>ביטול</button>
+              <button className="btn btn-danger" onClick={() => {
+                const list = loadBiz().filter(b => b.id !== bizId);
+                saveBiz(list); window.dispatchEvent(new Event('biz-updated')); onDelete();
+              }} style={{ flex:1, height:52, borderRadius:16, fontSize:15 }}>מחיקה</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* MENU MANAGER */
+function MenuManagerScreen({ bizId, onAddItem, onBack }) {
+  const [biz, setBiz] = useState(() => loadBiz().find(b => b.id === bizId));
+  const [expandedSec, setExpandedSec] = useState(null);
+
+  useEffect(() => {
+    const reload = () => setBiz(loadBiz().find(b => b.id === bizId));
+    window.addEventListener('biz-updated', reload);
+    return () => window.removeEventListener('biz-updated', reload);
+  }, [bizId]);
+
+  if (!biz) return null;
+  const totalItems = biz.menu.reduce((s, sec) => s + sec.items.length, 0);
+
+  const deleteItem = (secIdx, itemId) => {
+    const list = loadBiz();
+    const b = list.find(x => x.id === bizId);
+    b.menu[secIdx].items = b.menu[secIdx].items.filter(it => it.id !== itemId);
+    if (b.menu[secIdx].items.length === 0) b.menu.splice(secIdx, 1);
+    saveBiz(list);
+    window.dispatchEvent(new Event('biz-updated'));
+  };
+
+  return (
+    <div className="screen">
+      <div style={{ background:'var(--paper)', paddingTop:'max(54px,calc(env(safe-area-inset-top,0px) + 10px))',
+        paddingBottom:14, boxShadow:'0 2px 12px rgba(0,0,0,.22)', zIndex:3 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'6px 18px 0' }}>
+          <button onClick={onBack} style={{ all:'unset', cursor:'pointer', width:36, height:36, borderRadius:11,
+            background:'var(--paper-3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name="chev-left" size={20} stroke="var(--txt)" />
+          </button>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:20, fontWeight:900 }}>ניהול תפריט</div>
+            <div style={{ fontSize:12.5, color:'var(--ink-4)', fontWeight:600, marginTop:1 }}>
+              {biz.name} · {totalItems} מנות
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="screen-scroll" style={{ padding:'16px 18px 110px' }}>
+        {biz.menu.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 24px', color:'var(--ink-4)' }}>
+            <Icon name="menu-book" size={52} stroke="var(--gold-tint)" sw={1.4} style={{ marginBottom:16 }} />
+            <div style={{ fontSize:18, fontWeight:800, color:'var(--txt)', marginBottom:8 }}>התפריט ריק עדיין</div>
+            <div style={{ fontSize:14, fontWeight:600 }}>הוסף מנה ראשונה ותתחיל לקבל הזמנות</div>
+          </div>
+        ) : (
+          biz.menu.map((sec, si) => (
+            <div key={si} style={{ background:'var(--paper)', borderRadius:18,
+              marginBottom:12, overflow:'hidden', boxShadow:'var(--shadow-sm)' }}>
+              <button onClick={() => setExpandedSec(expandedSec === si ? null : si)}
+                style={{ all:'unset', cursor:'pointer', width:'100%', display:'flex',
+                  alignItems:'center', gap:12, padding:'14px 16px' }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:16, fontWeight:800 }}>{sec.sec}</div>
+                  <div style={{ fontSize:12.5, color:'var(--ink-4)', fontWeight:600, marginTop:2 }}>{sec.items.length} מנות</div>
+                </div>
+                <Icon name="chev-down" size={20} stroke="var(--ink-3)"
+                  style={{ transform: expandedSec === si ? 'rotate(180deg)' : 'none', transition:'transform .2s' }} />
+              </button>
+              {(expandedSec === si || biz.menu.length <= 2) && sec.items.map((it, ii) => (
+                <div key={it.id} style={{ display:'flex', alignItems:'center', gap:12,
+                  padding:'12px 16px', borderTop:'1px solid var(--line)' }}>
+                  <Photo src={it.photo} label={it.name} radius={10}
+                    style={{ width:52, height:52, flex:'0 0 auto' }} />
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:14.5, fontWeight:800 }}>{it.name}</div>
+                    {it.desc && <div style={{ fontSize:12, color:'var(--ink-4)', fontWeight:600, marginTop:2,
+                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{it.desc}</div>}
+                  </div>
+                  <div className="num" style={{ fontSize:15, fontWeight:900, color:'var(--gold-bright)' }}>{ils(it.price)}</div>
+                  <button onClick={() => deleteItem(si, it.id)} style={{ all:'unset', cursor:'pointer',
+                    width:34, height:34, borderRadius:10, background:'var(--paper-3)',
+                    display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <Icon name="trash" size={15} stroke="var(--bad)" sw={2} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+
+      <div style={{ position:'absolute', bottom:0, insetInlineStart:0, insetInlineEnd:0,
+        padding:'14px 20px', paddingBottom:'max(24px,calc(env(safe-area-inset-bottom,0px) + 14px))',
+        background:'var(--paper-2)', borderTop:'1px solid var(--line)' }}>
+        <button className="btn btn-primary" onClick={onAddItem}
+          style={{ width:'100%', height:54, borderRadius:16, fontSize:16.5 }}>
+          <Icon name="plus" size={22} stroke="var(--ink)" sw={2.5} /> הוסף מנה
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ADD ITEM */
+function AddItemScreen({ bizId, onDone, onBack }) {
+  const [form, setForm] = useState({ name:'', desc:'', price:'', secName:'מנות עיקריות', customSec:'' });
+  const set = (k,v) => setForm(f => ({ ...f, [k]:v }));
+  const [showSecPicker, setShowSecPicker] = useState(false);
+  const secLabel = form.secName === '__custom' ? form.customSec : form.secName;
+
+  const save = () => {
+    if (!form.name.trim() || !form.price) return;
+    const biz = loadBiz().find(b => b.id === bizId);
+    if (!biz) return;
+    const newItem = {
+      id: genId(),
+      name: form.name.trim(),
+      desc: form.desc.trim(),
+      price: Number(form.price),
+      photo: null,
+      img: form.name.trim(),
+    };
+    const targetSec = secLabel || 'מנות עיקריות';
+    let sec = biz.menu.find(s => s.sec === targetSec);
+    if (!sec) { sec = { sec: targetSec, items: [] }; biz.menu.push(sec); }
+    sec.items.push(newItem);
+    const list = loadBiz();
+    const idx = list.findIndex(b => b.id === bizId);
+    if (idx >= 0) { list[idx] = biz; saveBiz(list); window.dispatchEvent(new Event('biz-updated')); }
+    onDone();
+  };
+
+  const canSave = form.name.trim() && form.price && Number(form.price) > 0;
+
+  return (
+    <div className="screen">
+      <div style={{ background:'var(--paper)', paddingTop:'max(54px,calc(env(safe-area-inset-top,0px) + 10px))',
+        paddingBottom:14, boxShadow:'0 2px 12px rgba(0,0,0,.22)', zIndex:3 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'6px 18px 0' }}>
+          <button onClick={onBack} style={{ all:'unset', cursor:'pointer', width:36, height:36, borderRadius:11,
+            background:'var(--paper-3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name="chev-left" size={20} stroke="var(--txt)" />
+          </button>
+          <div style={{ fontSize:20, fontWeight:900 }}>הוספת מנה</div>
+        </div>
+      </div>
+
+      <div className="screen-scroll" style={{ padding:'22px 20px 110px' }}>
+        <FieldBox label="שם המנה *">
+          <TextInput value={form.name} onChange={e => set('name', e.target.value)} placeholder="למשל: שווארמה בלאפה..." />
+        </FieldBox>
+        <FieldBox label="תיאור (אופציונלי)">
+          <TextInput multiline value={form.desc} onChange={e => set('desc', e.target.value)}
+            placeholder="תיאור קצר של המנה, מרכיבים מיוחדים..." rows={3} />
+        </FieldBox>
+        <FieldBox label="מחיר (₪) *">
+          <TextInput type="number" value={form.price} onChange={e => set('price', e.target.value)} placeholder="0" />
+        </FieldBox>
+        <FieldBox label="קטגוריה בתפריט">
+          <button onClick={() => setShowSecPicker(true)}
+            style={{ all:'unset', cursor:'pointer', width:'100%', background:'var(--paper)', borderRadius:14,
+              padding:'13px 14px', display:'flex', alignItems:'center', justifyContent:'space-between',
+              boxShadow:'inset 0 0 0 1.5px var(--line-2)' }}>
+            <span style={{ fontSize:15, fontWeight:600, color: secLabel ? 'var(--txt)' : 'var(--ink-4)' }}>
+              {secLabel || 'בחר קטגוריה'}
+            </span>
+            <Icon name="chev-down" size={18} stroke="var(--ink-3)" />
+          </button>
+        </FieldBox>
+
+        {canSave && (
+          <div style={{ background:'var(--paper)', borderRadius:16, padding:'14px 16px',
+            boxShadow:'var(--shadow-sm)', animation:'fadeUp .3s ease' }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'var(--ink-4)', marginBottom:8 }}>תצוגה מקדימה</div>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div className="ph" data-label={form.name}
+                style={{ width:52, height:52, borderRadius:12, flex:'0 0 auto' }} />
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:15, fontWeight:800 }}>{form.name}</div>
+                {form.desc && <div style={{ fontSize:12.5, color:'var(--ink-4)', marginTop:2 }}>{form.desc}</div>}
+              </div>
+              <div className="num" style={{ fontSize:16, fontWeight:900, color:'var(--gold-bright)' }}>{ils(form.price)}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ position:'absolute', bottom:0, insetInlineStart:0, insetInlineEnd:0,
+        padding:'14px 20px', paddingBottom:'max(24px,calc(env(safe-area-inset-bottom,0px) + 14px))',
+        background:'var(--paper-2)', borderTop:'1px solid var(--line)' }}>
+        <button className="btn btn-primary" onClick={save} disabled={!canSave}
+          style={{ width:'100%', height:54, borderRadius:16, fontSize:16.5, opacity: canSave ? 1 : .4 }}>
+          <Icon name="check" size={20} stroke="var(--ink)" sw={2.5} /> שמור מנה
+        </button>
+      </div>
+
+      {showSecPicker && (
+        <BottomSheet title="קטגוריה בתפריט" onClose={() => setShowSecPicker(false)}>
+          {ITEM_CATEGORIES.map(s => (
+            <div key={s} onClick={() => { set('secName', s); setShowSecPicker(false); }}
+              style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'14px 0', borderBottom:'1px solid var(--line)', cursor:'pointer' }}>
+              <span style={{ fontSize:15.5, fontWeight:700 }}>{s}</span>
+              {form.secName === s && <Icon name="check" size={18} stroke="var(--gold-deep)" sw={2.5} />}
+            </div>
+          ))}
+        </BottomSheet>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { BusinessDashboardScreen, MenuManagerScreen, AddItemScreen });
+  </script>
+
+  <script type="text/babel">
+// ── app root ──────────────────────────────────────────────────
+function BizApp() {
+  const [view, setView] = useState('home');
+  const [dir, setDir] = useState(1);
+  const [bizId, setBizId] = useState(null);
+
+  const go = useCallback((next, d=1, id=null) => {
+    setDir(d);
+    if (id !== null) setBizId(id);
+    setView(next);
+  }, []);
+
+  let screen;
+  if (view === 'home')
+    screen = <MyBusinessesScreen onOpen={(id) => go('dashboard', 1, id)} onCreateNew={() => go('create', 1)} />;
+  else if (view === 'create')
+    screen = <CreateBusinessScreen onDone={(id) => go('dashboard', 1, id)} onBack={() => go('home', -1)} />;
+  else if (view === 'dashboard')
+    screen = <BusinessDashboardScreen bizId={bizId} onManageMenu={() => go('menu', 1)} onBack={() => go('home', -1)} onDelete={() => go('home', -1)} />;
+  else if (view === 'menu')
+    screen = <MenuManagerScreen bizId={bizId} onAddItem={() => go('additem', 1)} onBack={() => go('dashboard', -1)} />;
+  else if (view === 'additem')
+    screen = <AddItemScreen bizId={bizId} onDone={() => go('menu', -1)} onBack={() => go('menu', -1)} />;
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'var(--paper-2)' }}>
+      <div key={view} style={{ position:'absolute', inset:0,
+        animation:`${dir > 0 ? 'pushFwd' : 'pushBack'} .34s cubic-bezier(.2,.75,.2,1)` }}>
+        {screen}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<BizApp />);
+  </script>
+
+  <!-- Error overlay -->
+  <script>
+    (function () {
+      var errors = [];
+      function show() {
+        var el = document.getElementById('__err');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = '__err';
+          el.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(20,5,5,.93);color:#ff9090;font:13px/1.5 ui-monospace,monospace;direction:ltr;padding:24px 20px;overflow:auto;white-space:pre-wrap;word-break:break-all';
+          document.body.appendChild(el);
+        }
+        el.textContent = '⚠ JavaScript Error\n\n' + errors.join('\n\n---\n\n');
+      }
+      window.addEventListener('error', function(e) {
+        if (e.message === 'Script error.' && !e.filename && e.lineno === 0) return;
+        if (!e.message || e.message === 'Script error.') return;
+        errors.push((e.message || '') + '\n' + (e.filename || '') + ':' + e.lineno + '\n' + (e.error && e.error.stack ? e.error.stack : ''));
+        show();
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        errors.push('Unhandled Promise rejection:\n' + (e.reason && e.reason.stack ? e.reason.stack : String(e.reason)));
+        show();
+      });
+    })();
+  </script>
+</body>
+</html>
