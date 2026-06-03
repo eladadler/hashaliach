@@ -2272,5 +2272,43 @@ function AdminStage({ children }) {
 ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp />);
 
   </script>
+
+  <!-- ===== Dev error overlay — shows JS errors on blank screens ===== -->
+  <script>
+    (function () {
+      var errors = [];
+      function show() {
+        var el = document.getElementById('__err');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = '__err';
+          el.style.cssText = [
+            'position:fixed','inset:0','z-index:999999',
+            'background:rgba(20,5,5,.93)','color:#ff9090',
+            'font:13px/1.5 ui-monospace,monospace','direction:ltr',
+            'padding:24px 20px','overflow:auto','white-space:pre-wrap',
+            'word-break:break-all'
+          ].join(';');
+          document.body.appendChild(el);
+        }
+        el.textContent = '⚠ JavaScript Error\n\n' + errors.join('\n\n---\n\n');
+      }
+      window.addEventListener('error', function(e) {
+        errors.push((e.message || '') + '\n' + (e.filename || '') + ':' + e.lineno + '\n' + (e.error && e.error.stack ? e.error.stack : ''));
+        show();
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        errors.push('Unhandled Promise rejection:\n' + (e.reason && e.reason.stack ? e.reason.stack : String(e.reason)));
+        show();
+      });
+      var _ce = console.error.bind(console);
+      console.error = function() {
+        var msg = Array.from(arguments).map(function(a){ return typeof a === 'object' ? JSON.stringify(a,null,2) : String(a); }).join(' ');
+        errors.push('[console.error] ' + msg);
+        show();
+        _ce.apply(console, arguments);
+      };
+    })();
+  </script>
 </body>
 </html>
